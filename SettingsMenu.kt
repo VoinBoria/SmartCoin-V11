@@ -20,7 +20,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 
 @Composable
-fun SettingsMenu(onDismiss: () -> Unit) {
+fun SettingsMenu(
+    onDismiss: () -> Unit,
+    onCurrencySelected: (String) -> Unit,
+    onLanguageSelected: (String) -> Unit // Доданий параметр
+) {
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
 
@@ -67,9 +71,18 @@ fun SettingsMenu(onDismiss: () -> Unit) {
                     .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                LanguageOption("UK", selectedLanguage) { selectedLanguage = it }
-                LanguageOption("EN", selectedLanguage) { selectedLanguage = it }
-                LanguageOption("RU", selectedLanguage) { selectedLanguage = it }
+                LanguageOption("UK", selectedLanguage) {
+                    selectedLanguage = it
+                    onLanguageSelected(it) // Виклик onLanguageSelected при виборі мови
+                }
+                LanguageOption("EN", selectedLanguage) {
+                    selectedLanguage = it
+                    onLanguageSelected(it) // Виклик onLanguageSelected при виборі мови
+                }
+                LanguageOption("RU", selectedLanguage) {
+                    selectedLanguage = it
+                    onLanguageSelected(it) // Виклик onLanguageSelected при виборі мови
+                }
             }
             Spacer(modifier = Modifier.height(16.dp))
             Divider(color = Color.Gray, thickness = 1.dp)
@@ -95,6 +108,7 @@ fun SettingsMenu(onDismiss: () -> Unit) {
                 }
                 TextButton(onClick = {
                     saveSettings(sharedPreferences, selectedLanguage, selectedCurrency)
+                    onCurrencySelected(selectedCurrency)
                     onDismiss()
                 }) {
                     Text("Зберегти", color = Color.Green)
