@@ -73,15 +73,18 @@ fun SettingsMenu(
             ) {
                 LanguageOption("UK", selectedLanguage) {
                     selectedLanguage = it
-                    onLanguageSelected(it) // Виклик onLanguageSelected при виборі мови
+                    onLanguageSelected(it)
+                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency) // Додано
                 }
                 LanguageOption("EN", selectedLanguage) {
                     selectedLanguage = it
-                    onLanguageSelected(it) // Виклик onLanguageSelected при виборі мови
+                    onLanguageSelected(it)
+                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency) // Додано
                 }
                 LanguageOption("RU", selectedLanguage) {
                     selectedLanguage = it
-                    onLanguageSelected(it) // Виклик onLanguageSelected при виборі мови
+                    onLanguageSelected(it)
+                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency) // Додано
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -94,9 +97,21 @@ fun SettingsMenu(
                     .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                CurrencyOption("UAH", selectedCurrency) { selectedCurrency = it }
-                CurrencyOption("USD", selectedCurrency) { selectedCurrency = it }
-                CurrencyOption("EUR", selectedCurrency) { selectedCurrency = it }
+                CurrencyOption("UAH", selectedCurrency) {
+                    selectedCurrency = it
+                    onCurrencySelected(it)
+                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency) // Додано
+                }
+                CurrencyOption("USD", selectedCurrency) {
+                    selectedCurrency = it
+                    onCurrencySelected(it)
+                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency) // Додано
+                }
+                CurrencyOption("EUR", selectedCurrency) {
+                    selectedCurrency = it
+                    onCurrencySelected(it)
+                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency) // Додано
+                }
             }
             Spacer(modifier = Modifier.height(16.dp))
             Row(
@@ -117,7 +132,6 @@ fun SettingsMenu(
         }
     }
 }
-
 @Composable
 fun LanguageOption(language: String, selectedLanguage: String, onSelect: (String) -> Unit) {
     Button(
