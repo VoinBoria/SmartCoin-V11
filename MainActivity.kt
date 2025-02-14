@@ -56,12 +56,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.compose.ui.zIndex
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.rememberPagerState
+import java.util.Locale
 
 class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels()
@@ -113,59 +115,89 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     @Composable
     fun MainContent() {
+        val context = LocalContext.current
+        var selectedCurrency by remember { mutableStateOf(getSelectedCurrency(context)) }
+        var selectedLanguage by remember { mutableStateOf(getSelectedLanguage(context)) }
+
         MainScreen(
             onNavigateToMainActivity = {
-                val intent = Intent(this@MainActivity, MainActivity::class.java).apply {
+                val intent = Intent(context, MainActivity::class.java).apply {
                     putExtra("SHOW_SPLASH_SCREEN", false)
                 }
-                startActivity(intent)
+                context.startActivity(intent)
             },
             onNavigateToIncomes = {
-                val intent = Intent(this@MainActivity, IncomeActivity::class.java)
-                startActivity(intent)
+                val intent = Intent(context, IncomeActivity::class.java)
+                context.startActivity(intent)
             },
             onNavigateToExpenses = {
-                val intent = Intent(this@MainActivity, ExpenseActivity::class.java)
-                startActivity(intent)
+                val intent = Intent(context, ExpenseActivity::class.java)
+                context.startActivity(intent)
             },
             onNavigateToIssuedOnLoan = {
-                val intent = Intent(this@MainActivity, IssuedOnLoanActivity::class.java)
-                startActivity(intent)
+                val intent = Intent(context, IssuedOnLoanActivity::class.java)
+                context.startActivity(intent)
             },
             onNavigateToBorrowed = {
-                val intent = Intent(this@MainActivity, BorrowedActivity::class.java)
-                startActivity(intent)
+                val intent = Intent(context, BorrowedActivity::class.java)
+                context.startActivity(intent)
             },
             onNavigateToAllTransactionIncome = {
-                val intent = Intent(this@MainActivity, AllTransactionIncomeActivity::class.java)
-                startActivity(intent)
+                val intent = Intent(context, AllTransactionIncomeActivity::class.java)
+                context.startActivity(intent)
             },
             onNavigateToAllTransactionExpense = {
-                val intent = Intent(this@MainActivity, AllTransactionExpenseActivity::class.java)
-                startActivity(intent)
+                val intent = Intent(context, AllTransactionExpenseActivity::class.java)
+                context.startActivity(intent)
             },
             onNavigateToBudgetPlanning = {
-                val intent = Intent(this@MainActivity, BudgetPlanningActivity::class.java)
-                startActivity(intent)
+                val intent = Intent(context, BudgetPlanningActivity::class.java)
+                context.startActivity(intent)
             },
             onNavigateToTaskActivity = {
-                val intent = Intent(this@MainActivity, TaskActivity::class.java)
-                startActivity(intent)
+                val intent = Intent(context, TaskActivity::class.java)
+                context.startActivity(intent)
             },
             viewModel = viewModel,
             onIncomeCategoryClick = { category ->
-                val intent = Intent(this@MainActivity, IncomeTransactionActivity::class.java).apply {
+                val intent = Intent(context, IncomeTransactionActivity::class.java).apply {
                     putExtra("categoryName", category)
                 }
-                startActivity(intent)
+                context.startActivity(intent)
             },
             onExpenseCategoryClick = { category ->
-                val intent = Intent(this@MainActivity, ExpenseTransactionActivity::class.java).apply {
+                val intent = Intent(context, ExpenseTransactionActivity::class.java).apply {
                     putExtra("categoryName", category)
                 }
-                startActivity(intent)
-            }
+                context.startActivity(intent)
+            },
+            selectedCurrency = selectedCurrency,
+            onCurrencySelected = { selectedCurrency = it },
+            selectedLanguage = selectedLanguage,
+            onLanguageSelected = {
+                selectedLanguage = it
+                updateLocale(context, it)
+            },
+            updateLocale = ::updateLocale // Доданий параметр
         )
+    }
+
+    private fun getSelectedCurrency(context: Context): String {
+        val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("currency", "UAH") ?: "UAH"
+    }
+
+    private fun getSelectedLanguage(context: Context): String {
+        val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("language", "UK") ?: "UK"
+    }
+
+    private fun updateLocale(context: Context, language: String) {
+        val locale = Locale(language)
+        Locale.setDefault(locale)
+        val config = context.resources.configuration
+        config.setLocale(locale)
+        context.resources.updateConfiguration(config, context.resources.displayMetrics)
     }
 }
 // Функція Splash Screen
@@ -402,7 +434,12 @@ fun MainScreen(
     onNavigateToTaskActivity: () -> Unit,
     viewModel: MainViewModel = viewModel(),
     onIncomeCategoryClick: (String) -> Unit,
-    onExpenseCategoryClick: (String) -> Unit
+    onExpenseCategoryClick: (String) -> Unit,
+    selectedCurrency: String,
+    onCurrencySelected: (String) -> Unit,
+    selectedLanguage: String,
+    onLanguageSelected: (String) -> Unit,
+    updateLocale: (Context, String) -> Unit // Доданий параметр
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -468,7 +505,7 @@ fun MainScreen(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Домашня бухгалтерія", color = Color.White) },
+                    title = { Text(stringResource(id = R.string.main_screen_title), color = Color.White) },
                     navigationIcon = {
                         IconButton(onClick = { scope.launch { drawerState.open() } }) {
                             Icon(
@@ -482,7 +519,7 @@ fun MainScreen(
                         IconButton(onClick = { showSettingsMenu = true }) {
                             Icon(
                                 imageVector = Icons.Default.Settings,
-                                contentDescription = "Налаштування",
+                                contentDescription = stringResource(id = R.string.settings),
                                 tint = Color.White
                             )
                         }
@@ -524,7 +561,7 @@ fun MainScreen(
                                             .border(2.dp, Color.Gray, RoundedCornerShape(10.dp))
                                     ) {
                                         ExpandableButtonWithAmount(
-                                            text = "Доходи: ",
+                                            text = stringResource(id = R.string.incomes),
                                             amount = totalIncomes,
                                             gradientColors = listOf(
                                                 Color.Transparent,
@@ -558,7 +595,7 @@ fun MainScreen(
                                             .border(2.dp, Color.Gray, RoundedCornerShape(10.dp))
                                     ) {
                                         ExpandableButtonWithAmount(
-                                            text = "Витрати: ",
+                                            text = stringResource(id = R.string.expenses),
                                             amount = totalExpenses,
                                             gradientColors = listOf(
                                                 Color.Transparent,
@@ -622,7 +659,7 @@ fun MainScreen(
                                             .border(2.dp, Color.Gray, RoundedCornerShape(10.dp))
                                     ) {
                                         ExpandableButtonWithAmount(
-                                            text = "Доходи: ",
+                                            text = stringResource(id = R.string.incomes),
                                             amount = totalIncomes,
                                             gradientColors = listOf(
                                                 Color.Transparent,
@@ -656,7 +693,7 @@ fun MainScreen(
                                             .border(2.dp, Color.Gray, RoundedCornerShape(10.dp))
                                     ) {
                                         ExpandableButtonWithAmount(
-                                            text = "Витрати: ",
+                                            text = stringResource(id = R.string.expenses),
                                             amount = totalExpenses,
                                             gradientColors = listOf(
                                                 Color.Transparent,
@@ -753,7 +790,12 @@ fun MainScreen(
 
                     if (showSettingsMenu) {
                         SettingsMenu(
-                            onDismiss = { showSettingsMenu = false }
+                            onDismiss = { showSettingsMenu = false },
+                            onCurrencySelected = onCurrencySelected,
+                            onLanguageSelected = { language ->
+                                onLanguageSelected(language)
+                                updateLocale(context, language)
+                            }
                         )
                     }
 
@@ -779,7 +821,7 @@ fun MainScreen(
                                 .padding(16.dp)
                         ) {
                             Text(
-                                text = if (showWarning) "Вам потрібно менше витрачати" else "Ви на вірному шляху",
+                                text = if (showWarning) stringResource(id = R.string.need_to_spend_less) else stringResource(id = R.string.on_the_right_track),
                                 style = MaterialTheme.typography.bodyLarge.copy(
                                     color = Color.White,
                                     fontWeight = FontWeight.Bold
@@ -787,7 +829,6 @@ fun MainScreen(
                             )
                         }
                     }
-
 
                     Row(
                         modifier = Modifier
