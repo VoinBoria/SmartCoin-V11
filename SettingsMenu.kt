@@ -1,4 +1,7 @@
-package com.serhio.homeaccountingapp;
+package com.serhio.homeaccountingapp
+
+import android.content.Context
+import android.content.SharedPreferences
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -11,12 +14,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 
 @Composable
 fun SettingsMenu(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+
+    var selectedLanguage by remember { mutableStateOf(sharedPreferences.getString("language", "UK") ?: "UK") }
+    var selectedCurrency by remember { mutableStateOf(sharedPreferences.getString("currency", "UAH") ?: "UAH") }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -57,9 +67,9 @@ fun SettingsMenu(onDismiss: () -> Unit) {
                     .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                LanguageOption("UK")
-                LanguageOption("EN")
-                LanguageOption("RU")
+                LanguageOption("UK", selectedLanguage) { selectedLanguage = it }
+                LanguageOption("EN", selectedLanguage) { selectedLanguage = it }
+                LanguageOption("RU", selectedLanguage) { selectedLanguage = it }
             }
             Spacer(modifier = Modifier.height(16.dp))
             Divider(color = Color.Gray, thickness = 1.dp)
@@ -71,9 +81,9 @@ fun SettingsMenu(onDismiss: () -> Unit) {
                     .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                CurrencyOption("UAH")
-                CurrencyOption("USD")
-                CurrencyOption("EUR")
+                CurrencyOption("UAH", selectedCurrency) { selectedCurrency = it }
+                CurrencyOption("USD", selectedCurrency) { selectedCurrency = it }
+                CurrencyOption("EUR", selectedCurrency) { selectedCurrency = it }
             }
             Spacer(modifier = Modifier.height(16.dp))
             Row(
@@ -83,7 +93,10 @@ fun SettingsMenu(onDismiss: () -> Unit) {
                 TextButton(onClick = onDismiss) {
                     Text("Закрити", color = Color.Red)
                 }
-                TextButton(onClick = { /* Handle save action */ }) {
+                TextButton(onClick = {
+                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency)
+                    onDismiss()
+                }) {
                     Text("Зберегти", color = Color.Green)
                 }
             }
@@ -92,11 +105,11 @@ fun SettingsMenu(onDismiss: () -> Unit) {
 }
 
 @Composable
-fun LanguageOption(language: String) {
+fun LanguageOption(language: String, selectedLanguage: String, onSelect: (String) -> Unit) {
     Button(
-        onClick = { /* Handle language change */ },
+        onClick = { onSelect(language) },
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Yellow.copy(alpha = 0.5f),
+            containerColor = if (language == selectedLanguage) Color.Gray else Color.Gray.copy(alpha = 0.5f),
             contentColor = Color.White
         ),
         modifier = Modifier
@@ -107,16 +120,24 @@ fun LanguageOption(language: String) {
 }
 
 @Composable
-fun CurrencyOption(currency: String) {
+fun CurrencyOption(currency: String, selectedCurrency: String, onSelect: (String) -> Unit) {
     Button(
-        onClick = { /* Handle currency change */ },
+        onClick = { onSelect(currency) },
         colors = ButtonDefaults.buttonColors(
-            containerColor = Color.Blue.copy(alpha = 0.5f),
+            containerColor = if (currency == selectedCurrency) Color.Blue else Color.Blue.copy(alpha = 0.5f),
             contentColor = Color.White
         ),
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
     ) {
         Text(text = currency)
+    }
+}
+
+fun saveSettings(sharedPreferences: SharedPreferences, language: String, currency: String) {
+    with(sharedPreferences.edit()) {
+        putString("language", language)
+        putString("currency", currency)
+        apply()
     }
 }
