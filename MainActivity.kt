@@ -119,6 +119,8 @@ class MainActivity : ComponentActivity() {
         var selectedCurrency by remember { mutableStateOf(getSelectedCurrency(context)) }
         var selectedLanguage by remember { mutableStateOf(getSelectedLanguage(context)) }
 
+        updateLocale(context, selectedLanguage) // Додано
+
         MainScreen(
             onNavigateToMainActivity = {
                 val intent = Intent(context, MainActivity::class.java).apply {
@@ -187,9 +189,12 @@ class MainActivity : ComponentActivity() {
         return sharedPreferences.getString("currency", "UAH") ?: "UAH"
     }
 
+    // Додаємо виклик updateLocale(context, selectedLanguage) після зчитування налаштувань
     private fun getSelectedLanguage(context: Context): String {
         val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
-        return sharedPreferences.getString("language", "UK") ?: "UK"
+        val language = sharedPreferences.getString("language", "UK") ?: "UK"
+        updateLocale(context, language) // Додано
+        return language
     }
 
     private fun updateLocale(context: Context, language: String) {
