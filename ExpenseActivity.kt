@@ -103,6 +103,8 @@ class ExpenseActivity : ComponentActivity() {
             }
         }
 
+        val selectedCurrency = getSelectedCurrency(this)
+
         setContent {
             HomeAccountingAppTheme {
                 val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -144,6 +146,7 @@ class ExpenseActivity : ComponentActivity() {
                         content = { innerPadding ->
                             ExpenseScreen(
                                 viewModel = viewModel,
+                                selectedCurrency = selectedCurrency,
                                 onOpenTransactionScreen = { categoryName, transactionsJson ->
                                     val intent = Intent(this, ExpenseTransactionActivity::class.java).apply {
                                         putExtra("categoryName", categoryName)
@@ -201,6 +204,10 @@ class ExpenseActivity : ComponentActivity() {
             defaultCategories
         }
         viewModel.updateCategories(categoriesList)
+    }
+    private fun getSelectedCurrency(context: Context): String {
+        val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("currency", "UAH") ?: "UAH"
     }
 
     override fun onDestroy() {
@@ -439,6 +446,7 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
 @Composable
 fun ExpenseScreen(
     viewModel: ExpenseViewModel,
+    selectedCurrency: String, // Додано змінну для вибраної валюти
     onOpenTransactionScreen: (String, String) -> Unit,
     onDeleteCategory: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -486,6 +494,7 @@ fun ExpenseScreen(
                             CategoryRow(
                                 category = category,
                                 expenseAmount = categoryExpenses[category] ?: 0.0,
+                                selectedCurrency = selectedCurrency, // Додаємо вибрану валюту
                                 onClick = {
                                     onOpenTransactionScreen(category, Gson().toJson(transactions))
                                 },
@@ -563,7 +572,7 @@ fun ExpenseScreen(
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 Text(
-                    text = "${totalExpense.formatAmount(2)} грн",
+                    text = "${totalExpense.formatAmount(2)} $selectedCurrency", // Додаємо вибрану валюту
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     color = Color.White
                 )
@@ -653,11 +662,13 @@ fun ExpenseScreen(
         }
     }
 }
+
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun CategoryRow(
     category: String,
     expenseAmount: Double,
+    selectedCurrency: String, // Додано змінну для вибраної валюти
     onClick: () -> Unit,
     onDelete: () -> Unit,
     onEdit: () -> Unit
@@ -692,7 +703,7 @@ fun CategoryRow(
                 modifier = Modifier.weight(1f)
             )
             Text(
-                text = "${expenseAmount.formatAmount(2)} грн",
+                text = "${expenseAmount.formatAmount(2)} $selectedCurrency", // Додаємо вибрану валюту
                 style = MaterialTheme.typography.bodyLarge.copy(fontSize = fontSize),
                 color = Color.White,
                 modifier = Modifier.padding(end = 8.dp)
