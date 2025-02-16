@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -93,7 +94,7 @@ class ExpenseActivity : ComponentActivity() {
         sharedPreferences = getSharedPreferences("ExpensePrefs", Context.MODE_PRIVATE)
 
         loadExpensesFromSharedPreferences()
-        loadCategoriesFromSharedPreferences() // Завантаження категорій
+        loadCategoriesFromSharedPreferences(this) // Завантаження категорій
 
         transactionResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
@@ -131,10 +132,10 @@ class ExpenseActivity : ComponentActivity() {
                     Scaffold(
                         topBar = {
                             TopAppBar(
-                                title = { Text("Витрати", color = Color.White) },
+                                title = { Text(stringResource(R.string.expense_title), color = Color.White) },
                                 navigationIcon = {
                                     IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                        Icon(Icons.Default.Menu, contentDescription = "Меню", tint = Color.White)
+                                        Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.menu_description), tint = Color.White)
                                     }
                                 },
                                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF121212))
@@ -190,12 +191,12 @@ class ExpenseActivity : ComponentActivity() {
         viewModel.updateExpenses(expenseMap)
     }
 
-    private fun loadCategoriesFromSharedPreferences() {
+    private fun loadCategoriesFromSharedPreferences(context: Context) {
         val categoriesJson = sharedPreferences.getString("categories", null)
         val categoriesList: List<String> = if (categoriesJson != null) {
             Gson().fromJson(categoriesJson, object : TypeToken<List<String>>() {}.type)
         } else {
-            val defaultCategories = viewModel.getStandardCategories()
+            val defaultCategories = viewModel.getStandardCategories(context)
             viewModel.saveCategories(defaultCategories)
             defaultCategories
         }
@@ -241,9 +242,22 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
         sendUpdateBroadcast?.invoke()
     }
 
-    // Отримання стандартних категорій
-    fun getStandardCategories(): List<String> {
-        return listOf("Аренда", "Комунальні послуги", "Транспорт", "Розваги", "Продукти", "Одяг", "Здоров'я", "Освіта", "Подарунки", "Хобі", "Благодійність", "Спорт", "Техніка")
+    fun getStandardCategories(context: Context): List<String> {
+        return listOf(
+            context.getString(R.string.rent),
+            context.getString(R.string.utilities),
+            context.getString(R.string.transport),
+            context.getString(R.string.entertainment),
+            context.getString(R.string.groceries),
+            context.getString(R.string.clothing),
+            context.getString(R.string.health),
+            context.getString(R.string.education),
+            context.getString(R.string.gifts),
+            context.getString(R.string.hobbies),
+            context.getString(R.string.charity),
+            context.getString(R.string.sports),
+            context.getString(R.string.electronics)
+        )
     }
 
     // Функція для завантаження даних
@@ -511,7 +525,7 @@ fun ExpenseScreen(
                             .widthIn(max = if (screenWidth < 360.dp) 200.dp else 250.dp)
                     ) {
                         MenuButton(
-                            text = "Додати транзакцію",
+                            text = stringResource(R.string.add_transaction),
                             backgroundColors = listOf(
                                 Color(0xFF8B0000).copy(alpha = 0.7f),
                                 Color(0xFFDC143C).copy(alpha = 0.1f)
@@ -523,7 +537,7 @@ fun ExpenseScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         MenuButton(
-                            text = "Додати категорію",
+                            text = stringResource(R.string.add_category_expense),
                             backgroundColors = listOf(
                                 Color(0xFF00008B).copy(alpha = 0.7f),
                                 Color(0xFF4682B4).copy(alpha = 0.1f)
@@ -543,7 +557,7 @@ fun ExpenseScreen(
                     .padding(30.dp)
             ) {
                 Text(
-                    text = "Загальні витрати:",
+                    text = stringResource(R.string.total_expense),
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.White,
                     modifier = Modifier.padding(bottom = 8.dp)
@@ -570,7 +584,7 @@ fun ExpenseScreen(
                         .widthIn(max = if (screenWidth < 360.dp) 250.dp else 300.dp)
                 ) {
                     Text(
-                        text = "Ви впевнені, що хочете видалити цю категорію?",
+                        text = stringResource(R.string.delete_category),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White,
                         modifier = Modifier.padding(bottom = 16.dp)
@@ -585,7 +599,7 @@ fun ExpenseScreen(
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4682B4))
                         ) {
-                            Text("Ні", color = Color.White)
+                            Text(stringResource(R.string.no_expense), color = Color.White)
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Button(
@@ -597,7 +611,7 @@ fun ExpenseScreen(
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B0000))
                         ) {
-                            Text("Так", color = Color.White)
+                            Text(stringResource(R.string.yes_expense), color = Color.White)
                         }
                     }
                 }
@@ -687,14 +701,14 @@ fun CategoryRow(
                 IconButton(onClick = onEdit) {
                     Icon(
                         imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit Category",
+                        contentDescription = stringResource(id = R.string.edit_category),
                         tint = Color.White
                     )
                 }
                 IconButton(onClick = onDelete) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete Category",
+                        contentDescription = stringResource(id = R.string.delete_category),
                         tint = Color.White
                     )
                 }
@@ -707,7 +721,6 @@ fun Double.formatAmount(digits: Int): String {
     return "%.${digits}f".format(this)
 }
 
-
 @Composable
 fun EditCategoryDialog(
     oldCategoryName: String,
@@ -719,7 +732,7 @@ fun EditCategoryDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Редагувати категорію",
+                text = stringResource(id = R.string.edit_category),
                 style = MaterialTheme.typography.titleLarge,
                 color = Color.White
             )
@@ -729,7 +742,7 @@ fun EditCategoryDialog(
                 OutlinedTextField(
                     value = newCategoryName,
                     onValueChange = { newCategoryName = it },
-                    label = { Text("Нова назва категорії", color = Color.Gray) },
+                    label = { Text(stringResource(id = R.string.new_category_name), color = Color.Gray) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp),
@@ -754,12 +767,12 @@ fun EditCategoryDialog(
                     }
                 }
             ) {
-                Text("Зберегти", color = Color.White)
+                Text(stringResource(id = R.string.save), color = Color.White)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Закрити", color = Color.Gray)
+                Text(stringResource(id = R.string.close), color = Color.Gray)
             }
         },
         containerColor = Color(0xFF2B2B2B)
@@ -797,6 +810,7 @@ fun MenuButton(text: String, backgroundColors: List<Color>, onClick: () -> Unit)
         }
     }
 }
+
 @Composable
 fun AddCategoryDialog(
     onDismiss: () -> Unit,
@@ -807,7 +821,7 @@ fun AddCategoryDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Додати категорію",
+                text = stringResource(id = R.string.add_category_expense),
                 style = MaterialTheme.typography.titleLarge,
                 color = Color.White
             )
@@ -817,7 +831,7 @@ fun AddCategoryDialog(
                 OutlinedTextField(
                     value = categoryName,
                     onValueChange = { categoryName = it },
-                    label = { Text("Назва категорії", color = Color.Gray) },
+                    label = { Text(stringResource(id = R.string.category_name), color = Color.Gray) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp),
@@ -842,17 +856,18 @@ fun AddCategoryDialog(
                     }
                 }
             ) {
-                Text("Зберегти", color = Color.White)
+                Text(stringResource(id = R.string.save), color = Color.White)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Закрити", color = Color.Gray)
+                Text(stringResource(id = R.string.close), color = Color.Gray)
             }
         },
         containerColor = Color(0xFF2B2B2B)
     )
 }
+
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -914,7 +929,7 @@ fun AddTransactionDialog(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Додати витрату",
+                text = stringResource(id = R.string.add_expense),
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Bold,
                     color = Color.Red
@@ -930,7 +945,7 @@ fun AddTransactionDialog(
                         amount = newValue
                     }
                 },
-                label = { Text("Сума", color = Color.White) },
+                label = { Text(stringResource(id = R.string.amount), color = Color.White) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
@@ -956,7 +971,7 @@ fun AddTransactionDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Yellow)
             ) {
                 Text(
-                    text = "Дата: $date",
+                    text = "${stringResource(id = R.string.date)}: $date",
                     color = Color.Black,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                 )
@@ -972,7 +987,7 @@ fun AddTransactionDialog(
                         filteredCategories = categories.filter { it.contains(query, true) }
                         isDropdownExpanded = true
                     },
-                    label = { Text("Категорія") },
+                    label = { Text(stringResource(id = R.string.category)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .menuAnchor(),
@@ -1014,7 +1029,7 @@ fun AddTransactionDialog(
             OutlinedTextField(
                 value = comment,
                 onValueChange = { comment = it },
-                label = { Text("Коментар", color = Color.White) },
+                label = { Text(stringResource(id = R.string.comment), color = Color.White) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
@@ -1039,7 +1054,7 @@ fun AddTransactionDialog(
                     onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
                 ) {
-                    Text("Скасувати", color = Color.White)
+                    Text(stringResource(id = R.string.cancel), color = Color.White)
                 }
                 Button(
                     onClick = {
@@ -1056,7 +1071,7 @@ fun AddTransactionDialog(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
                 ) {
-                    Text("Зберегти", color = Color.White)
+                    Text(stringResource(id = R.string.save), color = Color.White)
                 }
             }
         }
