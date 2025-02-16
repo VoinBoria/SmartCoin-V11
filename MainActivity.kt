@@ -242,10 +242,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _incomeCategories = MutableLiveData<List<String>>()
     val incomeCategories: LiveData<List<String>> = _incomeCategories
-
     // Списки стандартних категорій
-    private val standardExpenseCategories = listOf("Аренда", "Комунальні послуги", "Транспорт", "Розваги", "Продукти", "Одяг", "Здоров'я", "Освіта", "Інші")
-    private val standardIncomeCategories = listOf("Зарплата", "Премія", "Подарунки", "Пасивний дохід")
+    private val standardExpenseCategories = listOf(
+        application.getString(R.string.rent),
+        application.getString(R.string.utilities),
+        application.getString(R.string.transport),
+        application.getString(R.string.entertainment),
+        application.getString(R.string.groceries),
+        application.getString(R.string.clothing),
+        application.getString(R.string.health),
+        application.getString(R.string.education),
+        application.getString(R.string.other)
+    )
+
+    private val standardIncomeCategories = listOf(
+        application.getString(R.string.salary),
+        application.getString(R.string.bonus),
+        application.getString(R.string.gifts),
+        application.getString(R.string.passive_income)
+    )
 
     init {
         loadStandardCategories()
