@@ -1,4 +1,4 @@
-package com.serhio.homeaccountingapp;
+package com.serhio.homeaccountingapp
 
 import android.annotation.SuppressLint
 import android.app.Application
@@ -6,15 +6,14 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.Image
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -34,12 +33,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.paint
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -50,29 +49,55 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
-import com.serhio.homeaccountingapp.ui.theme.HomeAccountingAppTheme
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import kotlinx.coroutines.*
+import com.serhio.homeaccountingapp.ui.theme.HomeAccountingAppTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.*
 
 class BudgetPlanningActivity : ComponentActivity() {
     private val viewModel: BudgetPlanningViewModel by viewModels()
 
-    private val updateReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if ("com.example.homeaccountingapp.UPDATE_EXPENSES" == intent.action) {
-                viewModel.loadExpensesFromMainActivity(context)
-            }
-        }
+    private lateinit var updateReceiver: BroadcastReceiver
+    private lateinit var localeReceiver: BroadcastReceiver
+
+    private fun <T> navigateToActivity(activityClass: Class<T>) {
+        val intent = Intent(this, activityClass)
+        startActivity(intent)
+    }
+
+    private fun updateLocale(context: Context, language: String) {
+        val locale = Locale(language)
+        Locale.setDefault(locale)
+        val config = context.resources.configuration
+        config.setLocale(locale)
+        context.resources.updateConfiguration(config, context.resources.displayMetrics)
+    }
+
+    private fun getSelectedLanguage(context: Context): String {
+        val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("language", "UK") ?: "UK"
+    }
+
+    private fun getSelectedCurrency(context: Context): String {
+        val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("currency", "UAH") ?: "UAH"
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val selectedLanguage = getSelectedLanguage(this)
+        updateLocale(this, selectedLanguage)
+
         setContent {
             HomeAccountingAppTheme {
                 val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
                 val scope = rememberCoroutineScope()
+                val selectedCurrency = getSelectedCurrency(LocalContext.current)
 
                 ModalNavigationDrawer(
                     drawerState = drawerState,
@@ -98,10 +123,12 @@ class BudgetPlanningActivity : ComponentActivity() {
                     Scaffold(
                         topBar = {
                             TopAppBar(
-                                title = { Text("Планування витрат", color = Color.White) },
+                                title = {
+                                    Text(stringResource(id = R.string.budget_planning), color = Color.White)
+                                },
                                 navigationIcon = {
                                     IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                        Icon(Icons.Default.Menu, contentDescription = "Меню", tint = Color.White)
+                                        Icon(Icons.Default.Menu, contentDescription = stringResource(id = R.string.menu), tint = Color.White)
                                     }
                                 },
                                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF121212))
@@ -121,7 +148,7 @@ class BudgetPlanningActivity : ComponentActivity() {
                                     modifier = Modifier.fillMaxSize()
                                 ) {
                                     Spacer(modifier = Modifier.height(40.dp))
-                                    BudgetPlanningScreen(viewModel)
+                                    BudgetPlanningScreen(viewModel, selectedCurrency)
                                 }
                             }
                         }
@@ -130,7 +157,27 @@ class BudgetPlanningActivity : ComponentActivity() {
             }
         }
 
-        LocalBroadcastManager.getInstance(this).registerReceiver(updateReceiver, IntentFilter("com.example.homeaccountingapp.UPDATE_EXPENSES"))
+        updateReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                if (intent.action == "com.example.homeaccountingapp.UPDATE_EXPENSES") {
+                    viewModel.loadExpensesFromMainActivity(context)
+                }
+            }
+        }
+        val filter = IntentFilter("com.example.homeaccountingapp.UPDATE_EXPENSES")
+        LocalBroadcastManager.getInstance(this).registerReceiver(updateReceiver, filter)
+
+        localeReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                if (intent.action == "com.example.homeaccountingapp.UPDATE_LOCALE") {
+                    val language = intent.getStringExtra("language") ?: return
+                    updateLocale(context, language)
+                    recreate()
+                }
+            }
+        }
+        val localeFilter = IntentFilter("com.example.homeaccountingapp.UPDATE_LOCALE")
+        LocalBroadcastManager.getInstance(this).registerReceiver(localeReceiver, localeFilter)
 
         viewModel.loadExpenseCategories(this)
         viewModel.loadMaxExpenses(this)
@@ -141,13 +188,10 @@ class BudgetPlanningActivity : ComponentActivity() {
     override fun onDestroy() {
         super.onDestroy()
         LocalBroadcastManager.getInstance(this).unregisterReceiver(updateReceiver)
-    }
-
-    private fun <T> navigateToActivity(activityClass: Class<T>) {
-        val intent = Intent(this, activityClass)
-        startActivity(intent)
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(localeReceiver)
     }
 }
+
 class BudgetPlanningViewModel(application: Application) : AndroidViewModel(application) {
     val expenseCategories = MutableLiveData<Map<String, Double>>(emptyMap())
     val maxExpenses = MutableLiveData<Map<String, Double>>(emptyMap())
@@ -164,9 +208,6 @@ class BudgetPlanningViewModel(application: Application) : AndroidViewModel(appli
     var weeklySaving by mutableStateOf("")
     var monthlySaving by mutableStateOf("")
     var savedAmount by mutableStateOf("")
-
-    private val standardExpenseCategories = listOf("Їжа", "Транспорт", "Розваги")
-    private val standardIncomeCategories = listOf("Зарплата", "Подарунки", "Пасивний дохід")
 
     init {
         loadSavedAmounts(application.applicationContext)
@@ -233,7 +274,7 @@ class BudgetPlanningViewModel(application: Application) : AndroidViewModel(appli
         maxExpenses.value = updatedMaxExpenses
 
         saveMaxExpenses(context, updatedMaxExpenses)
-        saveMessage.value = "Ліміт збережено"
+        saveMessage.value = context.getString(R.string.limit_saved) // Ensure this string resource is defined
         isAddingLimit.value = false
     }
 
@@ -242,6 +283,7 @@ class BudgetPlanningViewModel(application: Application) : AndroidViewModel(appli
         val gson = Gson()
         val json = gson.toJson(maxExpenses)
         sharedPreferences.edit().putString("max_expenses", json).apply()
+        saveMessage.value = context.getString(R.string.limit_saved)
     }
 
     fun toggleAddingLimit(category: String) {
@@ -278,7 +320,7 @@ class BudgetPlanningViewModel(application: Application) : AndroidViewModel(appli
             .putString("monthly_saving", monthlySaving)
             .apply()
 
-        saveMessage.value = "Ціль збережено"
+        saveMessage.value = context.getString(R.string.goal_saved)
         isAddingGoal.value = false
     }
 
@@ -332,9 +374,10 @@ class BudgetPlanningViewModel(application: Application) : AndroidViewModel(appli
             .apply()
     }
 }
+
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun BudgetPlanningScreen(viewModel: BudgetPlanningViewModel) {
+fun BudgetPlanningScreen(viewModel: BudgetPlanningViewModel, selectedCurrency: String) {
     val expenseCategories by viewModel.expenseCategories.observeAsState(emptyMap())
     val maxExpenses by viewModel.maxExpenses.observeAsState(emptyMap())
     val expenses by viewModel.expenses.observeAsState(emptyMap())
@@ -371,6 +414,7 @@ fun BudgetPlanningScreen(viewModel: BudgetPlanningViewModel) {
                         category = category,
                         expense = expense,
                         maxExpense = maxExpense,
+                        selectedCurrency = selectedCurrency,
                         onToggleAddingLimit = {
                             viewModel.toggleAddingLimit(category)
                         }
@@ -388,7 +432,7 @@ fun BudgetPlanningScreen(viewModel: BudgetPlanningViewModel) {
                     .padding(padding),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF006400).copy(alpha = 0.8f))
             ) {
-                Text("Моя ціль", color = Color.White)
+                Text(stringResource(id = R.string.my_goal), color = Color.White)
             }
         }
 
@@ -419,7 +463,8 @@ fun BudgetPlanningScreen(viewModel: BudgetPlanningViewModel) {
                 onCalculateGoal = { viewModel.calculateGoal() },
                 onSaveGoal = {
                     viewModel.saveGoal(context)
-                    Toast.makeText(context, "Ціль збережено", Toast.LENGTH_SHORT).show() // Показ повідомлення після збереження
+                    Toast.makeText(context, context.getString(R.string.goal_saved), Toast.LENGTH_SHORT).show() // Показ повідомлення після збереження
+                    // Показ повідомлення після збереження
                 },
                 onAddSaving = { viewModel.addSaving(context) },
                 onViewSavings = {
@@ -428,6 +473,7 @@ fun BudgetPlanningScreen(viewModel: BudgetPlanningViewModel) {
                 },
                 percentageToGoal = percentageToGoal, // Передача прогресу до цілі
                 savedAmounts = savingsList, // Передача списку заощаджень
+                selectedCurrency = selectedCurrency, // Передача вибраної валюти
                 context = context // Передача контексту
             )
         }
@@ -444,11 +490,13 @@ fun BudgetPlanningScreen(viewModel: BudgetPlanningViewModel) {
 }
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BudgetCategoryItemWithRedBackground(
     category: String,
     expense: Double,
     maxExpense: Double,
+    selectedCurrency: String,
     onToggleAddingLimit: () -> Unit
 ) {
     BoxWithConstraints {
@@ -489,7 +537,7 @@ fun BudgetCategoryItemWithRedBackground(
                     onClick = onToggleAddingLimit,
                     colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
                 ) {
-                    val buttonText = if (maxExpense > 0) "Редагувати ліміт" else "Додати ліміт"
+                    val buttonText = if (maxExpense > 0) stringResource(id = R.string.edit_limit) else stringResource(id = R.string.add_limit)
                     Text(buttonText, fontWeight = FontWeight.Bold)
                 }
             }
@@ -500,12 +548,12 @@ fun BudgetCategoryItemWithRedBackground(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Ліміт: ${if (maxExpense > 0) maxExpense.formatBudgetAmount(2) + " грн" else "не заданий"}",
+                    text = "${stringResource(id = R.string.limit)}: ${if (maxExpense > 0) maxExpense.formatBudgetAmount(2) + " " + selectedCurrency else stringResource(id = R.string.limit_not_set)}",
                     style = MaterialTheme.typography.bodyMedium.copy(fontSize = fontSize),
                     color = Color.Gray
                 )
                 Text(
-                    text = "Витрачено $percentage%",
+                    text = "${stringResource(id = R.string.spent)} $percentage%",
                     style = MaterialTheme.typography.bodyMedium.copy(fontSize = fontSize),
                     color = Color.White
                 )
@@ -514,6 +562,7 @@ fun BudgetCategoryItemWithRedBackground(
         }
     }
 }
+
 // Допоміжна функція для форматування чисел
 fun Double.formatBudgetAmount(digits: Int): String {
     return "%.${digits}f".format(this)
@@ -533,7 +582,7 @@ fun AddLimitDialog(
         onDismissRequest = onDismissRequest,
         containerColor = Color.Black.copy(alpha = 0.8f), // Темний прозорий фон
         title = {
-            Text(text = "Додати ліміт для $category", color = textColor)
+            Text(text = "${stringResource(id = R.string.add_limit)} $category", color = textColor)
         },
         text = {
             OutlinedTextField(
@@ -565,18 +614,19 @@ fun AddLimitDialog(
                     },
                     modifier = Modifier.padding(end = 8.dp)
                 ) {
-                    Text("Зберегти", color = Color.Green, fontWeight = FontWeight.Bold)
+                    Text(stringResource(id = R.string.save), color = Color.Green, fontWeight = FontWeight.Bold)
                 }
                 TextButton(
                     onClick = onDismissRequest
                 ) {
-                    Text("Скасувати", color = Color.Red, fontWeight = FontWeight.Bold)
+                    Text(stringResource(id = R.string.cancel), color = Color.Red, fontWeight = FontWeight.Bold)
                 }
             }
         },
         dismissButton = {}
     )
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddGoalDialog(
@@ -595,6 +645,7 @@ fun AddGoalDialog(
     onViewSavings: () -> Unit,
     percentageToGoal: Double,
     savedAmounts: List<Double>,
+    selectedCurrency: String,
     context: Context
 ) {
     val localContext = LocalContext.current
@@ -603,14 +654,14 @@ fun AddGoalDialog(
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = {
-            Text("Моя ціль", style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold))
+            Text(stringResource(id = R.string.my_goal), style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold))
         },
         text = {
             Column(modifier = Modifier.verticalScroll(scrollState)) {
                 OutlinedTextField(
                     value = goalAmount,
                     onValueChange = onGoalAmountChange,
-                    label = { Text("Моя ціль (грн)", color = Color.White) },
+                    label = { Text("${stringResource(id = R.string.goal_amount)} ($selectedCurrency)", color = Color.White) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = Color.Gray,
@@ -624,7 +675,7 @@ fun AddGoalDialog(
                 OutlinedTextField(
                     value = goalPeriod,
                     onValueChange = onGoalPeriodChange,
-                    label = { Text("Період (місяців)", color = Color.White) },
+                    label = { Text(stringResource(id = R.string.goal_period), color = Color.White) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = Color.Gray,
@@ -641,28 +692,28 @@ fun AddGoalDialog(
                         .fillMaxWidth()
                         .height(48.dp)
                 ) {
-                    Text("Розрахувати", color = Color.Yellow, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                    Text(stringResource(id = R.string.calculate), color = Color.Yellow, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Відкладати щотижня: $weeklySaving грн",
+                    text = "${stringResource(id = R.string.weekly_saving)}: $weeklySaving $selectedCurrency",
                     style = MaterialTheme.typography.bodyLarge.copy(color = Color.White, fontWeight = FontWeight.Bold)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Відкладати щомісяця: $monthlySaving грн",
+                    text = "${stringResource(id = R.string.monthly_saving)}: $monthlySaving $selectedCurrency",
                     style = MaterialTheme.typography.bodyLarge.copy(color = Color.White, fontWeight = FontWeight.Bold)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Divider(color = Color.Gray)
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
-                    text = "Накопичена сума збережень: ${savedAmounts.sum()} грн",
+                    text = "${stringResource(id = R.string.total_savings)}: ${savedAmounts.sum()} $selectedCurrency",
                     style = MaterialTheme.typography.bodyLarge.copy(color = Color.White, fontWeight = FontWeight.Bold)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Прогрес до цілі: ${percentageToGoal.format(2)}%",
+                    text = "${stringResource(id = R.string.goal_progress)}: ${percentageToGoal.format(2)}%",
                     style = MaterialTheme.typography.bodyLarge.copy(color = Color.White, fontWeight = FontWeight.Bold)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
@@ -672,13 +723,13 @@ fun AddGoalDialog(
                         .fillMaxWidth()
                         .height(48.dp)
                 ) {
-                    Text("Переглянути заощадження", color = Color.Green, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(stringResource(id = R.string.view_savings), color = Color.Green, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(
                     value = savedAmount,
                     onValueChange = onSavedAmountChange,
-                    label = { Text("Додати суму", color = Color.White) },
+                    label = { Text(stringResource(id = R.string.add_saving), color = Color.White) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = Color.Gray,
@@ -703,9 +754,9 @@ fun AddGoalDialog(
                                 val updatedSavedAmounts = savedAmounts + newSavedAmount
                                 editor.putString("saved_amounts", Gson().toJson(updatedSavedAmounts))
                                 editor.apply()
-                                Toast.makeText(localContext, "Ви заощадили $newSavedAmount грн", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(localContext, "${localContext.getString(R.string.you_saved)} $newSavedAmount $selectedCurrency", Toast.LENGTH_SHORT).show()
                             } else {
-                                Toast.makeText(localContext, "Введіть дійсне значення", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(localContext, localContext.getString(R.string.enter_valid_value), Toast.LENGTH_SHORT).show()
                             }
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF006400).copy(alpha = 0.4f)), // Темно-зелена прозора кнопка
@@ -714,7 +765,7 @@ fun AddGoalDialog(
                             .width(80.dp) // Ширина кнопки
                             .height(40.dp) // Висота кнопки
                     ) {
-                        Text("OK", color = Color.White, fontSize = 14.sp)
+                        Text(stringResource(id = R.string.ok), color = Color.White, fontSize = 14.sp)
                     }
                 }
             }
@@ -733,7 +784,7 @@ fun AddGoalDialog(
                         .width(120.dp) // Додана ширина кнопок
                         .height(40.dp) // Висота кнопок
                 ) {
-                    Text("Відміна", color = Color.Red, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(id = R.string.cancel), color = Color.Red, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
                 TextButton(
                     onClick = onSaveGoal,
@@ -741,13 +792,14 @@ fun AddGoalDialog(
                         .width(120.dp) // Додана ширина кнопок
                         .height(40.dp) // Висота кнопок
                 ) {
-                    Text("Зберегти", color = Color.Green, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                    Text(stringResource(id = R.string.save), color = Color.Green, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                 }
             }
         },
         containerColor = Color.DarkGray.copy(alpha = 0.8f) // Додана прозорість до самого меню
     )
 }
+
 // Додано: функція для форматування відсотка
 fun Double.format(digits: Int) = "%.${digits}f".format(this)
 
@@ -775,7 +827,7 @@ fun SavingsListDialog(
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = "Редагувати заощадження",
+                        text = stringResource(id = R.string.edit_saving),
                         color = Color.White,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
@@ -785,7 +837,7 @@ fun SavingsListDialog(
                         value = editedAmount,
                         onValueChange = { editedAmount = it },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        label = { Text("Сума", color = Color.Gray) },
+                        label = { Text(stringResource(id = R.string.saving_amount), color = Color.Gray) },
                         colors = TextFieldDefaults.outlinedTextFieldColors(
                             focusedBorderColor = Color.Gray,
                             unfocusedBorderColor = Color.Gray,
@@ -799,7 +851,7 @@ fun SavingsListDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         TextButton(onClick = { editingIndex = -1 }) {
-                            Text("Відміна", color = Color.White)
+                            Text(stringResource(id = R.string.cancel), color = Color.White)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
                         Button(
@@ -812,7 +864,7 @@ fun SavingsListDialog(
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = Color.Green.copy(alpha = 0.6f))
                         ) {
-                            Text("Зберегти", color = Color.White)
+                            Text(stringResource(id = R.string.save), color = Color.White)
                         }
                     }
                 }
@@ -833,7 +885,7 @@ fun SavingsListDialog(
                     .padding(padding)
             ) {
                 Text(
-                    text = "Список заощаджень",
+                    text = stringResource(id = R.string.savings_list),
                     fontSize = fontSize,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
@@ -853,7 +905,7 @@ fun SavingsListDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "${saving} грн",
+                                text = "$saving ${stringResource(id = R.string.currency)}",
                                 color = Color.White,
                                 modifier = Modifier.weight(1f),
                                 fontSize = fontSize
@@ -862,10 +914,10 @@ fun SavingsListDialog(
                                 editingIndex = index
                                 editedAmount = saving.toString()
                             }) {
-                                Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.Green)
+                                Icon(Icons.Default.Edit, contentDescription = stringResource(id = R.string.edit), tint = Color.Green)
                             }
                             IconButton(onClick = { onDeleteSaving(index) }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red)
+                                Icon(Icons.Default.Delete, contentDescription = stringResource(id = R.string.delete), tint = Color.Red)
                             }
                         }
                         Spacer(modifier = Modifier.height(padding))
@@ -877,12 +929,13 @@ fun SavingsListDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red.copy(alpha = 0.6f)),
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 ) {
-                    Text("Закрити", color = Color.White, fontSize = fontSize)
+                    Text(stringResource(id = R.string.close), color = Color.White, fontSize = fontSize)
                 }
             }
         }
     }
 }
+
 fun String.formatWithSpaces(): String {
     return this.reversed().chunked(3).joinToString(" ").reversed()
 }
