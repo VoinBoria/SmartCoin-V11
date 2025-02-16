@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -106,10 +107,10 @@ class IssuedOnLoanActivity : ComponentActivity() {
                     Scaffold(
                         topBar = {
                             TopAppBar(
-                                title = { Text("Видано в борг", color = Color.White) },
+                                title = { Text(stringResource(id = R.string.issued_on_loan), color = Color.White) },
                                 navigationIcon = {
                                     IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                        Icon(Icons.Default.Menu, contentDescription = "Меню", tint = Color.White)
+                                        Icon(Icons.Default.Menu, contentDescription = stringResource(id = R.string.menu), tint = Color.White)
                                     }
                                 },
                                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF121212))
@@ -147,7 +148,7 @@ class IssuedOnLoanActivity : ComponentActivity() {
                                             )
                                             .padding(16.dp)
                                     ) {
-                                        Text("Ви прострочили погашення боргу", color = Color.White)
+                                        Text(stringResource(id = R.string.overdue_loan_message), color = Color.White)
                                     }
                                 }
                             }
@@ -200,13 +201,13 @@ fun IssuedOnLoanScreen(
                         .padding(top = padding)
                 ) {
                     Text(
-                        text = "Видано в борг всього: ",
+                        text = stringResource(id = R.string.total_issued_on_loan),
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.White,
                         modifier = Modifier.padding(bottom = padding)
                     )
                     Text(
-                        text = "${totalLoaned.formatLoanAmount(2)} грн",
+                        text = "${totalLoaned.formatLoanAmount(2)} ${stringResource(id = R.string.currency)}",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         color = Color.White
                     )
@@ -220,7 +221,7 @@ fun IssuedOnLoanScreen(
                     .padding(padding),
                 containerColor = Color(0xFFDC143C)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Transaction", tint = Color.White)
+                Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.add_transaction), tint = Color.White)
             }
 
             if (showAddLoanDialog || transactionToEdit != null) {
@@ -273,37 +274,37 @@ fun LoanTransactionRow(loanTransaction: LoanTransaction, viewModel: LoanViewMode
         ) {
             Column {
                 Text(
-                    text = "Сума: ${loanTransaction.amount.formatLoanAmount(2)} грн",
+                    text = "${stringResource(id = R.string.amount)}: ${loanTransaction.amount.formatLoanAmount(2)} ${stringResource(id = R.string.currency)}",
                     style = TextStyle(fontSize = fontSize, fontWeight = FontWeight.Bold, color = Color.Red),
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
                 Text(
-                    text = "Ім'я: ${loanTransaction.borrowerName}",
+                    text = "${stringResource(id = R.string.borrower_name)}: ${loanTransaction.borrowerName}",
                     style = TextStyle(fontSize = fontSize, fontWeight = FontWeight.SemiBold, color = Color.Red),
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
                 Text(
-                    text = "Дата видачі: ${loanTransaction.issueDate}",
+                    text = "${stringResource(id = R.string.issue_date)}: ${loanTransaction.issueDate}",
                     style = TextStyle(fontSize = fontSize, fontWeight = FontWeight.Normal, color = Color.LightGray),
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
                 Text(
-                    text = "Дата погашення: ${loanTransaction.dueDate}",
+                    text = "${stringResource(id = R.string.due_date)}: ${loanTransaction.dueDate}",
                     style = TextStyle(fontSize = fontSize, fontWeight = FontWeight.Normal, color = Color.LightGray),
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
                 Text(
-                    text = "Коментар: ${loanTransaction.comment}",
+                    text = "${stringResource(id = R.string.comment)}: ${loanTransaction.comment}",
                     style = TextStyle(fontSize = fontSize, fontWeight = FontWeight.Normal, color = Color.LightGray),
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
             }
             Row(modifier = Modifier.align(Alignment.TopEnd)) {
                 IconButton(onClick = { onEdit(loanTransaction) }) {
-                    Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit", tint = Color.White)
+                    Icon(imageVector = Icons.Default.Edit, contentDescription = stringResource(id = R.string.edit), tint = Color.White)
                 }
                 IconButton(onClick = { viewModel.removeLoanTransaction(loanTransaction) }) {
-                    Icon(imageVector = Icons.Default.Delete, contentDescription = "Delete", tint = Color.White)
+                    Icon(imageVector = Icons.Default.Delete, contentDescription = stringResource(id = R.string.delete), tint = Color.White)
                 }
             }
         }
@@ -347,13 +348,13 @@ fun AddOrEditLoanTransactionDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(text = if (transactionToEdit != null) "Редагування транзакції" else "Додавання нової транзакції", style = TextStyle(color = Color.White)) },
+        title = { Text(text = if (transactionToEdit != null) stringResource(id = R.string.edit_transaction) else stringResource(id = R.string.add_new_transaction), style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold)) },
         text = {
             Column {
                 TextField(
                     value = amount,
                     onValueChange = { amount = it },
-                    label = { Text("Сума", style = TextStyle(color = Color.White)) },
+                    label = { Text(stringResource(id = R.string.loan_amount), style = TextStyle(color = Color.White)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     textStyle = TextStyle(color = Color.White, fontWeight = FontWeight.Bold),
                     colors = TextFieldDefaults.textFieldColors(
@@ -368,7 +369,7 @@ fun AddOrEditLoanTransactionDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Дата видачі в борг",
+                    text = stringResource(id = R.string.loan_date),
                     style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold),
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
@@ -382,7 +383,7 @@ fun AddOrEditLoanTransactionDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Дата погашення",
+                    text = stringResource(id = R.string.repayment_date),
                     style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold),
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
@@ -398,7 +399,7 @@ fun AddOrEditLoanTransactionDialog(
                 TextField(
                     value = borrowerName,
                     onValueChange = { borrowerName = it },
-                    label = { Text("Ім'я боржника", style = TextStyle(color = Color.White)) },
+                    label = { Text(stringResource(id = R.string.borrower_name_label), style = TextStyle(color = Color.White)) },
                     textStyle = TextStyle(color = Color.White, fontWeight = FontWeight.Bold),
                     colors = TextFieldDefaults.textFieldColors(
                         cursorColor = Color.White,
@@ -414,7 +415,7 @@ fun AddOrEditLoanTransactionDialog(
                 TextField(
                     value = comment,
                     onValueChange = { comment = it },
-                    label = { Text("Коментар", style = TextStyle(color = Color.White)) },
+                    label = { Text(stringResource(id = R.string.loan_comment), style = TextStyle(color = Color.White)) },
                     textStyle = TextStyle(color = Color.White, fontWeight = FontWeight.Bold),
                     colors = TextFieldDefaults.textFieldColors(
                         cursorColor = Color.White,
@@ -449,12 +450,12 @@ fun AddOrEditLoanTransactionDialog(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Text("Зберегти", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(id = R.string.save), style = MaterialTheme.typography.bodyLarge)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Скасувати", color = Color.White)
+                Text(stringResource(id = R.string.cancel), color = Color.White)
             }
         },
         containerColor = Color.DarkGray
