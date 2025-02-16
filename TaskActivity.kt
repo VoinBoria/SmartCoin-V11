@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -89,7 +90,7 @@ class TaskActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        sharedPreferences = getSharedPreferences("tasks_prefs", Context.MODE_PRIVATE)
+        sharedPreferences = getSharedPreferences("tasks_prefs", MODE_PRIVATE)
 
         val viewModel: TaskViewModel by viewModels {
             TaskViewModelFactory(sharedPreferences, gson, this)
@@ -135,10 +136,10 @@ class TaskActivity : ComponentActivity() {
                     Scaffold(
                         topBar = {
                             TopAppBar(
-                                title = { Text("Задачник", color = Color.White) },
+                                title = { Text(stringResource(id = R.string.task_list_title), color = Color.White) },
                                 navigationIcon = {
                                     IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                        Icon(Icons.Default.Menu, contentDescription = "Меню", tint = Color.White)
+                                        Icon(Icons.Default.Menu, contentDescription = stringResource(id = R.string.menu), tint = Color.White)
                                     }
                                 },
                                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF121212))
@@ -176,7 +177,7 @@ class TaskActivity : ComponentActivity() {
                                             )
                                             .padding(16.dp)
                                     ) {
-                                        Text("У вас є невиконане завдання", color = Color.White)
+                                        Text(stringResource(id = R.string.overdue_task_message), color = Color.White)
                                     }
                                 }
                             }
@@ -190,6 +191,13 @@ class TaskActivity : ComponentActivity() {
         checkExactAlarmPermission()
     }
 
+    override fun onResume() {
+        super.onResume()
+        val sharedPreferences = getSharedPreferences("settings", MODE_PRIVATE)
+        val language = sharedPreferences.getString("language", "UK") ?: "UK"
+        updateLocale(this, language)
+    }
+
     private fun checkNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
@@ -200,7 +208,7 @@ class TaskActivity : ComponentActivity() {
 
     private fun checkExactAlarmPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val alarmManager = getSystemService(ALARM_SERVICE) as AlarmManager
             if (!alarmManager.canScheduleExactAlarms()) {
                 val intent = Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM)
                 startActivityForResult(intent, REQUEST_CODE_EXACT_ALARM_PERMISSION)
@@ -210,16 +218,16 @@ class TaskActivity : ComponentActivity() {
 
     private fun showPermissionDialog(permission: String, requestCode: Int) {
         AlertDialog.Builder(this)
-            .setTitle("Дозвіл на сповіщення")
-            .setMessage("Цей додаток потребує дозволу на сповіщення. Будь ласка, надайте дозвіл.")
-            .setPositiveButton("Дозволити") { _, _ ->
+            .setTitle(R.string.notification_permission_title)
+            .setMessage(R.string.notification_permission_message)
+            .setPositiveButton(R.string.allow) { _, _ ->
                 ActivityCompat.requestPermissions(
                     this,
                     arrayOf(permission),
                     requestCode
                 )
             }
-            .setNegativeButton("Відмінити", null)
+            .setNegativeButton(R.string.cancel, null)
             .show()
     }
 
@@ -234,9 +242,17 @@ class TaskActivity : ComponentActivity() {
                 startActivity(intent)
             } else {
                 // Permission denied, show a message to the user
-                Toast.makeText(this, "Будь ласка, увімкніть дозволи на повідомлення у налаштуваннях додатка", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, R.string.notification_permission_denied_message, Toast.LENGTH_LONG).show()
             }
         }
+    }
+
+    private fun updateLocale(context: Context, language: String) {
+        val locale = Locale(language)
+        Locale.setDefault(locale)
+        val config = context.resources.configuration
+        config.setLocale(locale)
+        context.resources.updateConfiguration(config, context.resources.displayMetrics)
     }
 
     companion object {
@@ -438,7 +454,7 @@ fun TaskScreen(viewModel: TaskViewModel) {
                                 )
                                 .padding(16.dp)
                         ) {
-                            Text("Задача збережена", color = Color.White)
+                            Text(stringResource(id = R.string.task_saved_message), color = Color.White)
                         }
                     }
                 }
@@ -468,7 +484,7 @@ fun TaskScreen(viewModel: TaskViewModel) {
                                 )
                                 .padding(16.dp)
                         ) {
-                            Text("Нагадування по задачі \"$reminderTaskTitle\"", color = Color.Black)
+                            Text(stringResource(id = R.string.task_reminder_message, reminderTaskTitle), color = Color.Black)
                         }
                     }
                 }
@@ -478,172 +494,6 @@ fun TaskScreen(viewModel: TaskViewModel) {
 }
 
 @RequiresApi(Build.VERSION_CODES.S)
-@SuppressLint("ScheduleExactAlarm")
-fun scheduleReminder(alarmManager: AlarmManager, context: Context, triggerAtMillis: Long, taskTitle: String, action: String, requestCode: Int, reminderTime: String) {
-    val intent = Intent(context, ReminderBroadcastReceiver::class.java).apply {
-        putExtra("TASK_TITLE", taskTitle)
-        putExtra("ACTION", action)
-        putExtra("REMINDER_TIME", reminderTime)
-    }
-    val pendingIntent = PendingIntent.getBroadcast(context, requestCode, intent, PendingIntent.FLAG_IMMUTABLE)
-    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
-}
-
-class ReminderBroadcastReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
-        val taskTitle = intent.getStringExtra("TASK_TITLE")
-        val action = intent.getStringExtra("ACTION")
-        val reminderTime = intent.getStringExtra("REMINDER_TIME")
-
-        val message = when (action) {
-            "START" -> taskTitle ?: "Задача"
-            "REMINDER" -> "Задача \"$taskTitle\" почнеться через $reminderTime"
-            else -> "Нагадування по задачі \"$taskTitle\""
-        }
-
-        if (NotificationManagerCompat.from(context).areNotificationsEnabled()) {
-            showNotification(context, message)
-            vibratePhone(context)
-        } else {
-            requestNotificationPermission(context)
-        }
-    }
-
-    private fun showNotification(context: Context, message: String?) {
-        val channelId = "task_reminder_channel"
-        val channelName = "Task Reminder"
-        val importance = NotificationManager.IMPORTANCE_HIGH
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(channelId, channelName, importance).apply {
-                description = "Канал для нагадувань про задачі"
-            }
-            val notificationManager: NotificationManager =
-                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        val intent = Intent(context, TaskActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        }
-        val pendingIntent: PendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
-
-        val builder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("Нагадування")
-            .setContentText(message ?: "Нагадування")
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .setContentIntent(pendingIntent)
-
-        if (NotificationManagerCompat.from(context).areNotificationsEnabled()) {
-            try {
-                with(NotificationManagerCompat.from(context)) {
-                    notify(System.currentTimeMillis().toInt(), builder.build())
-                }
-            } catch (e: SecurityException) {
-                requestNotificationPermission(context)
-            }
-        } else {
-            requestNotificationPermission(context)
-        }
-    }
-
-    private fun vibratePhone(context: Context) {
-        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val effect = VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE)
-            vibrator.vibrate(effect)
-        } else {
-            vibrator.vibrate(500)
-        }
-    }
-
-    private fun requestNotificationPermission(context: Context) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-            }
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
-        } else {
-            Toast.makeText(context, "Будь ласка, увімкніть дозволи на повідомлення у налаштуваннях додатка", Toast.LENGTH_LONG).show()
-        }
-    }
-}
-
-@Composable
-fun TaskList(
-    tasks: List<Task>,
-    onToggleCompletion: (Task) -> Unit,
-    onDeleteTask: (Task) -> Unit,
-    onEditTask: (Task) -> Unit // Add this parameter for editing a task
-) {
-    LazyColumn {
-        items(tasks) { task ->
-            TaskItem(task, onToggleCompletion, onDeleteTask, onEditTask) // Pass the onEditTask callback
-        }
-    }
-}
-
-@Composable
-fun TaskItem(
-    task: Task,
-    onToggleCompletion: (Task) -> Unit,
-    onDeleteTask: (Task) -> Unit,
-    onEditTask: (Task) -> Unit // Add this parameter for editing a task
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .background(Color(0xFF1E1E1E).copy(alpha = 0.8f)) // Яскравіше, але прозоре
-            .padding(16.dp)
-            .clickable { onEditTask(task) }, // Add clickable modifier to trigger edit
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = task.title,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = FontWeight.Bold, // Жирний шрифт
-                    textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
-                    color = Color.White
-                )
-            )
-            task.description?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
-                        color = Color.White
-                    )
-                )
-            }
-            Text(
-                text = "Початок: ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(task.startDate)}",
-                style = MaterialTheme.typography.bodySmall.copy(color = Color.White)
-            )
-
-            if (task.isCompleted) {
-                Text(
-                    text = "Виконано",
-                    style = MaterialTheme.typography.bodySmall.copy(color = Color.Green)
-                )
-            }
-        }
-        Checkbox(
-            checked = task.isCompleted,
-            onCheckedChange = { onToggleCompletion(task) },
-            colors = CheckboxDefaults.colors(checkedColor = Color.Green)
-        )
-        IconButton(onClick = { onDeleteTask(task) }) {
-            Icon(imageVector = Icons.Default.Delete, contentDescription = "Видалити", tint = Color.White)
-        }
-    }
-}
-@RequiresApi(Build.VERSION_CODES.S)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskDialog(
@@ -651,20 +501,27 @@ fun AddTaskDialog(
     onDismiss: () -> Unit,
     onSave: (Task) -> Unit
 ) {
+    val context = LocalContext.current
+    val reminderOptions = listOf(
+        R.string.reminder_none,
+        R.string.reminder_10_minutes,
+        R.string.reminder_30_minutes,
+        R.string.reminder_1_hour,
+        R.string.reminder_1_day,
+        R.string.reminder_1_week
+    )
     var title by remember { mutableStateOf(taskToEdit?.title ?: "") }
     var description by remember { mutableStateOf(taskToEdit?.description ?: "") }
     var startDate by remember { mutableStateOf(taskToEdit?.startDate ?: Date()) }
     var startTime by remember { mutableStateOf(taskToEdit?.startDate ?: Date()) }
     var endDate by remember { mutableStateOf(taskToEdit?.endDate ?: Date()) }
     var endTime by remember { mutableStateOf(taskToEdit?.endDate ?: Date()) }
-    var reminder by remember { mutableStateOf(taskToEdit?.reminder ?: "За 10 хвилин") }
+    var reminder by remember { mutableStateOf(taskToEdit?.reminder ?: context.getString(R.string.reminder_10_minutes)) }
     var showStartDatePicker by remember { mutableStateOf(false) }
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndDatePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
     var showReminderMenu by remember { mutableStateOf(false) }
-
-    val context = LocalContext.current
 
     if (showStartDatePicker) {
         DatePickerDialog(
@@ -735,14 +592,14 @@ fun AddTaskDialog(
     AlertDialog(
         onDismissRequest = { onDismiss() },
         title = {
-            Text(if (taskToEdit == null) "Додати задачу" else "Редагувати задачу", color = Color.White)
+            Text(if (taskToEdit == null) stringResource(id = R.string.add_task) else stringResource(id = R.string.edit_task), color = Color.White)
         },
         text = {
             Column {
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Назва задачі", color = Color.White) },
+                    label = { Text(stringResource(id = R.string.task_title), color = Color.White) },
                     textStyle = TextStyle(color = Color.White),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = Color.White,
@@ -758,7 +615,7 @@ fun AddTaskDialog(
                 OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
-                    label = { Text("Опис задачі", color = Color.White) },
+                    label = { Text(stringResource(id = R.string.task_description), color = Color.White) },
                     textStyle = TextStyle(color = Color.White),
                     colors = TextFieldDefaults.outlinedTextFieldColors(
                         focusedBorderColor = Color.White,
@@ -783,7 +640,7 @@ fun AddTaskDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
                 ) {
                     Text(
-                        text = "Початок: ${SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(startTime)}",
+                        text = stringResource(id = R.string.start_date, SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(startTime)),
                         color = Color(0xFF4CAF50),
                         style = MaterialTheme.typography.bodyLarge
                     )
@@ -799,7 +656,7 @@ fun AddTaskDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
                 ) {
                     Text(
-                        text = "Нагадування: $reminder",
+                        text = stringResource(id = R.string.reminder, reminder),
                         color = Color.Yellow,
                         style = MaterialTheme.typography.bodyLarge
                     )
@@ -815,48 +672,15 @@ fun AddTaskDialog(
                             shape = RoundedCornerShape(8.dp)
                         )
                 ) {
-                    DropdownMenuItem(
-                        onClick = {
-                            reminder = "Не нагадувати"
-                            showReminderMenu = false
-                        },
-                        text = { Text("Не нагадувати", color = Color.White) }
-                    )
-                    DropdownMenuItem(
-                        onClick = {
-                            reminder = "За 10 хвилин"
-                            showReminderMenu = false
-                        },
-                        text = { Text("За 10 хвилин", color = Color.White) }
-                    )
-                    DropdownMenuItem(
-                        onClick = {
-                            reminder = "За пів години"
-                            showReminderMenu = false
-                        },
-                        text = { Text("За пів години", color = Color.White) }
-                    )
-                    DropdownMenuItem(
-                        onClick = {
-                            reminder = "За годину"
-                            showReminderMenu = false
-                        },
-                        text = { Text("За годину", color = Color.White) }
-                    )
-                    DropdownMenuItem(
-                        onClick = {
-                            reminder = "За день"
-                            showReminderMenu = false
-                        },
-                        text = { Text("За день", color = Color.White) }
-                    )
-                    DropdownMenuItem(
-                        onClick = {
-                            reminder = "За тиждень"
-                            showReminderMenu = false
-                        },
-                        text = { Text("За тиждень", color = Color.White) }
-                    )
+                    reminderOptions.forEach { resId ->
+                        DropdownMenuItem(
+                            onClick = {
+                                reminder = context.getString(resId)
+                                showReminderMenu = false
+                            },
+                            text = { Text(stringResource(id = resId), color = Color.White) }
+                        )
+                    }
                 }
             }
         },
@@ -874,30 +698,24 @@ fun AddTaskDialog(
                         )
                         onSave(task)
                         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-                        val reminderTime = when (reminder) {
-                            "За 10 хвилин" -> "10 хвилин"
-                            "За пів години" -> "пів години"
-                            "За годину" -> "годину"
-                            "За день" -> "день"
-                            "За тиждень" -> "тиждень"
-                            else -> ""
-                        }
 
                         // Schedule reminder based on selected option
-                        when (reminder) {
-                            "За 10 хвилин" -> scheduleReminder(alarmManager, context, task.startDate.time - 10 * 60 * 1000, task.title, "REMINDER", task.id.hashCode(), reminderTime)
-                            "За пів години" -> scheduleReminder(alarmManager, context, task.startDate.time - 30 * 60 * 1000, task.title, "REMINDER", task.id.hashCode(), reminderTime)
-                            "За годину" -> scheduleReminder(alarmManager, context, task.startDate.time - 60 * 60 * 1000, task.title, "REMINDER", task.id.hashCode(), reminderTime)
-                            "За день" -> scheduleReminder(alarmManager, context, task.startDate.time - 24 * 60 * 60 * 1000, task.title, "REMINDER", task.id.hashCode(), reminderTime)
-                            "За тиждень" -> scheduleReminder(alarmManager, context, task.startDate.time - 7 * 24 * 60 * 60 * 1000, task.title, "REMINDER", task.id.hashCode(), reminderTime)
+                        val reminderTime = when (reminder) {
+                            context.getString(R.string.reminder_10_minutes) -> task.startDate.time - 10 * 60 * 1000
+                            context.getString(R.string.reminder_30_minutes) -> task.startDate.time - 30 * 60 * 1000
+                            context.getString(R.string.reminder_1_hour) -> task.startDate.time - 60 * 60 * 1000
+                            context.getString(R.string.reminder_1_day) -> task.startDate.time - 24 * 60 * 60 * 1000
+                            context.getString(R.string.reminder_1_week) -> task.startDate.time - 7 * 24 * 60 * 60 * 1000
+                            else -> task.startDate.time
                         }
+                        scheduleReminder(alarmManager, context, reminderTime, task.title, "REMINDER", task.id.hashCode(), reminder)
                     } else {
                         // Show error message
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
             ) {
-                Text("Зберегти", color = Color.Green)
+                Text(stringResource(id = R.string.save), color = Color.Green)
             }
         },
         dismissButton = {
@@ -905,7 +723,7 @@ fun AddTaskDialog(
                 onClick = { onDismiss() },
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
             ) {
-                Text("Відмінити", color = Color.Red)
+                Text(stringResource(id = R.string.cancel), color = Color.Red)
             }
         },
         modifier = Modifier
@@ -919,4 +737,169 @@ fun AddTaskDialog(
         containerColor = Color.Transparent,
         textContentColor = Color.White
     )
+}
+@Composable
+fun TaskList(
+    tasks: List<Task>,
+    onToggleCompletion: (Task) -> Unit,
+    onDeleteTask: (Task) -> Unit,
+    onEditTask: (Task) -> Unit // Add this parameter for editing a task
+) {
+    LazyColumn {
+        items(tasks) { task ->
+            TaskItem(task, onToggleCompletion, onDeleteTask, onEditTask) // Pass the onEditTask callback
+        }
+    }
+}
+@Composable
+fun TaskItem(
+    task: Task,
+    onToggleCompletion: (Task) -> Unit,
+    onDeleteTask: (Task) -> Unit,
+    onEditTask: (Task) -> Unit // Add this parameter for editing a task
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .background(Color(0xFF1E1E1E).copy(alpha = 0.8f)) // Яскравіше, але прозоре
+            .padding(16.dp)
+            .clickable { onEditTask(task) }, // Add clickable modifier to trigger edit
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = task.title,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Bold, // Жирний шрифт
+                    textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
+                    color = Color.White
+                )
+            )
+            task.description?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
+                        color = Color.White
+                    )
+                )
+            }
+            Text(
+                text = stringResource(id = R.string.start_date, SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(task.startDate)),
+                style = MaterialTheme.typography.bodySmall.copy(color = Color.White)
+            )
+
+            if (task.isCompleted) {
+                Text(
+                    text = stringResource(id = R.string.completed),
+                    style = MaterialTheme.typography.bodySmall.copy(color = Color.Green)
+                )
+            }
+        }
+        Checkbox(
+            checked = task.isCompleted,
+            onCheckedChange = { onToggleCompletion(task) },
+            colors = CheckboxDefaults.colors(checkedColor = Color.Green)
+        )
+        IconButton(onClick = { onDeleteTask(task) }) {
+            Icon(imageVector = Icons.Default.Delete, contentDescription = stringResource(id = R.string.delete), tint = Color.White)
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.S)
+@SuppressLint("ScheduleExactAlarm")
+fun scheduleReminder(alarmManager: AlarmManager, context: Context, triggerAtMillis: Long, taskTitle: String, action: String, requestCode: Int, reminderTime: String) {
+    val intent = Intent(context, ReminderBroadcastReceiver::class.java).apply {
+        putExtra("TASK_TITLE", taskTitle)
+        putExtra("ACTION", action)
+        putExtra("REMINDER_TIME", reminderTime)
+    }
+    val pendingIntent = PendingIntent.getBroadcast(context, requestCode, intent, PendingIntent.FLAG_IMMUTABLE)
+    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+}
+
+class ReminderBroadcastReceiver : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        val taskTitle = intent.getStringExtra("TASK_TITLE")
+        val action = intent.getStringExtra("ACTION")
+        val reminderTime = intent.getStringExtra("REMINDER_TIME")
+
+        val message = when (action) {
+            "START" -> taskTitle ?: "Задача"
+            "REMINDER" -> context.getString(R.string.task_reminder_message, taskTitle ?: "task")
+            else -> context.getString(R.string.task_reminder_message, taskTitle ?: "task")
+        }
+
+        if (NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+            showNotification(context, message)
+            vibratePhone(context)
+        } else {
+            requestNotificationPermission(context)
+        }
+    }
+
+    private fun showNotification(context: Context, message: String?) {
+        val channelId = "task_reminder_channel"
+        val channelName = "Task Reminder"
+        val importance = NotificationManager.IMPORTANCE_HIGH
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(channelId, channelName, importance).apply {
+                description = "Канал для нагадувань про задачі"
+            }
+            val notificationManager: NotificationManager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val intent = Intent(context, TaskActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent: PendingIntent = PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_IMMUTABLE)
+
+        val builder = NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(context.getString(R.string.reminder))
+            .setContentText(message ?: context.getString(R.string.reminder))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+
+        if (NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+            try {
+                with(NotificationManagerCompat.from(context)) {
+                    notify(System.currentTimeMillis().toInt(), builder.build())
+                }
+            } catch (e: SecurityException) {
+                requestNotificationPermission(context)
+            }
+        } else {
+            requestNotificationPermission(context)
+        }
+    }
+
+    private fun vibratePhone(context: Context) {
+        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val effect = VibrationEffect.createOneShot(500, VibrationEffect.DEFAULT_AMPLITUDE)
+            vibrator.vibrate(effect)
+        } else {
+            vibrator.vibrate(500)
+        }
+    }
+
+    private fun requestNotificationPermission(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        } else {
+            Toast.makeText(context, R.string.notification_permission_denied_message, Toast.LENGTH_LONG).show()
+        }
+    }
 }
