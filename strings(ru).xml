@@ -52,7 +52,7 @@
     <string name="edit_limit">Редактировать лимит</string>
     <string name="limit_not_set">не задан</string>
     <string name="spent">Потрачено</string>
-    <string name="goal_amount">Целевая сумма (USD)</string>
+    <string name="goal_amount">Целевая сумма (%1$s)</string> <!-- Use %1$s for currency placeholder -->
     <string name="goal_period">Период (месяцев)</string>
     <string name="calculate">Рассчитать</string>
     <string name="weekly_saving">Еженедельные сбережения</string>
@@ -65,4 +65,9 @@
     <string name="edit_saving">Редактировать сбережения</string>
     <string name="saving_amount">Сумма</string>
     <string name="savings_list">Список сбережений</string>
+    <string name="limit">Лимит</string>
+    <string name="limit_saved">Лимит сохранен</string>
+    <string name="goal_saved">Цель сохранена</string>
+    <string name="you_saved">Вы сохранили</string>
+    <string name="enter_valid_value">Введите допустимое значение</string>
 </resources>
