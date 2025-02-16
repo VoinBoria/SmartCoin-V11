@@ -125,4 +125,8 @@
     <string name="charity">Благодійність</string>
     <string name="sports">Спорт</string>
     <string name="electronics">Техніка</string>
+    <string name="other">Інше</string>
+    <string name="salary">Зарплата</string>
+    <string name="bonus">Бонуси</string>
+    <string name="passive_income">Пасивний дохід</string>
 </resources>
