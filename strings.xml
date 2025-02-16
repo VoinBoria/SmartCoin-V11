@@ -95,4 +95,35 @@
     <string name="reminder_1_day_display">1 day</string>
     <string name="reminder_1_week_display">1 week</string>
     <string name="completed">Completed</string>
+    <string name="expense_title">Expenses</string>
+    <string name="menu_description_expense">Expense Menu</string>
+    <string name="add_transaction_expense">Add Expense Transaction</string>
+    <string name="add_category_expense">Add Expense Category</string>
+    <string name="total_expense">Total Expenses</string>
+    <string name="confirm_delete_category_expense">Are you sure you want to delete this expense category?</string>
+    <string name="no_expense">No</string>
+    <string name="yes_expense">Yes</string>
+    <string name="currency_uah">UAH</string>
+    <string name="currency_usd">USD</string>
+    <string name="currency_eur">EUR</string>
+    <string name="menu_description">Menu Description</string>
+    <string name="edit_category">Edit Category</string>
+    <string name="delete_category">Delete Category</string>
+    <string name="new_category_name">New Category Name</string>
+    <string name="category_name">Category Name</string>
+    <string name="add_expense">Add Expense</string>
+    <string name="rent">Rent</string>
+    <string name="utilities">Utilities</string>
+    <string name="transport">Transport</string>
+    <string name="entertainment">Entertainment</string>
+    <string name="groceries">Groceries</string>
+    <string name="clothing">Clothing</string>
+    <string name="health">Health</string>
+    <string name="education">Education</string>
+    <string name="gifts">Gifts</string>
+    <string name="hobbies">Hobbies</string>
+    <string name="charity">Charity</string>
+    <string name="sports">Sports</string>
+    <string name="electronics">Electronics</string>
+
 </resources>
