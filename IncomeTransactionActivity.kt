@@ -47,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.ui.draw.paint
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -60,7 +61,7 @@ class IncomeTransactionActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val categoryName = intent.getStringExtra("categoryName") ?: "Категорія"
+        val categoryName = intent.getStringExtra("categoryName") ?: getString(R.string.category)
 
         // Завантажуємо дані для вибраної категорії
         viewModel.filterByCategory(categoryName)
@@ -97,7 +98,7 @@ class IncomeTransactionActivity : ComponentActivity() {
                                 title = { Text(categoryName, color = Color.White) },
                                 navigationIcon = {
                                     IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                        Icon(Icons.Default.Menu, contentDescription = "Меню", tint = Color.White)
+                                        Icon(Icons.Default.Menu, contentDescription = stringResource(id = R.string.menu_description), tint = Color.White)
                                     }
                                 },
                                 actions = {
@@ -183,25 +184,25 @@ fun IncomePeriodButton(
         modifier = modifier.size(120.dp, 40.dp), // Збільшуємо ширину кнопки
         border = BorderStroke(1.dp, Color.Gray)
     ) {
-        Text("Період", fontWeight = FontWeight.Bold, color = Color.White)
+        Text(stringResource(id = R.string.period), fontWeight = FontWeight.Bold, color = Color.White)
     }
 
     if (dialogState.value) {
         AlertDialog(
             onDismissRequest = { dialogState.value = false },
             title = {
-                Text("Вибір періоду", style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold))
+                Text(stringResource(id = R.string.period_selection), style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold))
             },
             text = {
                 Column {
                     IncomeDatePickerField(
-                        label = "Початкова дата",
+                        label = stringResource(id = R.string.start_date),
                         date = startDate.value,
                         onDateSelected = { date -> startDate.value = date }
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     IncomeDatePickerField(
-                        label = "Кінцева дата",
+                        label = stringResource(id = R.string.end_date),
                         date = endDate.value,
                         onDateSelected = { date -> endDate.value = date }
                     )
@@ -219,12 +220,12 @@ fun IncomePeriodButton(
                         .padding(horizontal = 16.dp),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("Зберегти", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(id = R.string.save), style = MaterialTheme.typography.bodyLarge)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { dialogState.value = false }) {
-                    Text("Скасувати", style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold))
+                    Text(stringResource(id = R.string.cancel), style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold))
                 }
             },
             containerColor = Color.DarkGray
@@ -368,7 +369,7 @@ fun IncomeTransactionScreen(
                 .padding(16.dp),
             containerColor = Color(0xFF228B22)
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Add Transaction", tint = Color.White)
+            Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.add_transaction), tint = Color.White)
         }
         if (showAddDialog) {
             IncomeAddTransactionDialog(
@@ -392,12 +393,12 @@ fun IncomeTransactionScreen(
         ) {
             Spacer(modifier = Modifier.height(8.dp)) // Додати відступ між кнопкою та текстом
             Text(
-                text = "Загальні доходи:",
+                text = stringResource(id = R.string.total_income),
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.White
             )
             Text(
-                text = "${totalIncomeForFilteredTransactions.incomeFormatAmount(2)} грн",
+                text = "${totalIncomeForFilteredTransactions.incomeFormatAmount(2)} ${stringResource(id = R.string.currency_uah)}",
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = Color.Green // Зелений колір для суми доходів
             )
@@ -429,7 +430,7 @@ fun IncomeAddTransactionDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Додавання нової транзакції",
+                text = stringResource(id = R.string.add_new_transaction),
                 style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold)
             )
         },
@@ -438,7 +439,7 @@ fun IncomeAddTransactionDialog(
                 TextField(
                     value = amount,
                     onValueChange = { amount = it },
-                    label = { Text("Сума", style = TextStyle(color = Color.White)) },
+                    label = { Text(stringResource(id = R.string.amount), style = TextStyle(color = Color.White)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     textStyle = TextStyle(color = Color.White, fontWeight = FontWeight.Bold),
                     colors = TextFieldDefaults.textFieldColors(
@@ -467,7 +468,7 @@ fun IncomeAddTransactionDialog(
                 TextField(
                     value = comment,
                     onValueChange = { comment = it },
-                    label = { Text("Коментар", style = TextStyle(color = Color.White)) },
+                    label = { Text(stringResource(id = R.string.comment), style = TextStyle(color = Color.White)) },
                     textStyle = TextStyle(color = Color.White, fontWeight = FontWeight.Bold),  // Білий шрифт для введення коментаря
                     colors = TextFieldDefaults.textFieldColors(
                         cursorColor = Color.White,
@@ -502,12 +503,12 @@ fun IncomeAddTransactionDialog(
                     .padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Text("Зберегти", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(id = R.string.save), style = MaterialTheme.typography.bodyLarge)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Скасувати", color = Color.White)
+                Text(stringResource(id = R.string.cancel), color = Color.White)
             }
         },
         containerColor = Color.DarkGray
@@ -671,13 +672,13 @@ fun IncomeEditTransactionDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Редагування транзакції", style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold)) },
+        title = { Text(stringResource(id = R.string.edit_transaction), style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold)) },
         text = {
             Column {
                 TextField(
                     value = updatedAmount,
                     onValueChange = { updatedAmount = it },
-                    label = { Text("Сума", style = TextStyle(color = Color.White)) },
+                    label = { Text(stringResource(id = R.string.amount), style = TextStyle(color = Color.White)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     textStyle = TextStyle(color = Color.White, fontWeight = FontWeight.Bold),
                     colors = TextFieldDefaults.textFieldColors(
@@ -699,7 +700,7 @@ fun IncomeEditTransactionDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF616161))
                 ) {
                     Text(
-                        text = if (updatedDate.isBlank()) "Вибрати дату" else "Дата: $updatedDate",
+                        text = if (updatedDate.isBlank()) stringResource(id = R.string.date) else "${stringResource(id = R.string.date)}: $updatedDate",
                         color = Color.White,
                         style = MaterialTheme.typography.bodyLarge
                     )
@@ -708,7 +709,7 @@ fun IncomeEditTransactionDialog(
                 TextField(
                     value = updatedComment,
                     onValueChange = { updatedComment = it },
-                    label = { Text("Коментар", style = TextStyle(color = Color.White)) },
+                    label = { Text(stringResource(id = R.string.comment), style = TextStyle(color = Color.White)) },
                     colors = TextFieldDefaults.textFieldColors(
                         focusedIndicatorColor = Color.White,
                         unfocusedIndicatorColor = Color.White,
@@ -738,12 +739,12 @@ fun IncomeEditTransactionDialog(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Text("Зберегти", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(id = R.string.save), style = MaterialTheme.typography.bodyLarge)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Скасувати", color = Color.White)
+                Text(stringResource(id = R.string.cancel), color = Color.White)
             }
         },
         containerColor = Color.DarkGray
