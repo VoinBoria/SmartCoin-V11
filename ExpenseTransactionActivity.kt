@@ -39,6 +39,7 @@ import com.google.gson.reflect.TypeToken
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.draw.paint
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -60,7 +61,7 @@ class ExpenseTransactionActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val categoryName = intent.getStringExtra("categoryName") ?: "Категорія"
+        val categoryName = intent.getStringExtra("categoryName") ?: getString(R.string.category)
         val gson = Gson()
         val sharedPreferences = getSharedPreferences("ExpensePrefs", MODE_PRIVATE)
         val transactionsJson = sharedPreferences.getString("transactions", "[]") ?: "[]"
@@ -100,7 +101,7 @@ class ExpenseTransactionActivity : ComponentActivity() {
                                 title = { Text(categoryName, color = Color.White) },
                                 navigationIcon = {
                                     IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                        Icon(Icons.Default.Menu, contentDescription = "Меню", tint = Color.White)
+                                        Icon(Icons.Default.Menu, contentDescription = getString(R.string.menu_description), tint = Color.White)
                                     }
                                 },
                                 actions = {
@@ -254,9 +255,9 @@ fun ExpenseTransactionScreen(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
-            containerColor = Color(0xFF228B22) // Semi-transparent green button
+            containerColor = Color(0xFF228B22) // Напівпрозора зелена кнопка
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Add Transaction", tint = Color.White)
+            Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.add_transaction_expense), tint = Color.White)
         }
         if (showAddDialog) {
             AddTransactionDialog(
@@ -279,12 +280,12 @@ fun ExpenseTransactionScreen(
         ) {
             Spacer(modifier = Modifier.height(8.dp)) // Додати відступ між кнопкою та текстом
             Text(
-                text = "Загальні витрати:",
+                text = stringResource(id = R.string.total_expense),
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.White
             )
             Text(
-                text = "${totalExpenseForFilteredTransactions.formatAmount(2)} грн",
+                text = "${totalExpenseForFilteredTransactions.formatAmount(2)} ${stringResource(id = R.string.currency_uah)}",
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = Color.Red // Червоний колір для загальної суми
             )
@@ -306,25 +307,25 @@ fun ExpenseTransactionPeriodButton(viewModel: ExpenseViewModel, modifier: Modifi
         border = BorderStroke(1.dp, Color.Gray),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
     ) {
-        Text("Період", fontWeight = FontWeight.Bold, color = Color.White)
+        Text(stringResource(id = R.string.period), fontWeight = FontWeight.Bold, color = Color.White)
     }
 
     if (dialogState.value) {
         AlertDialog(
             onDismissRequest = { dialogState.value = false },
             title = {
-                Text("Вибір періоду", style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold))
+                Text(stringResource(id = R.string.period_selection), style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold))
             },
             text = {
                 Column {
                     ExpenseTransactionDatePickerField(
-                        label = "Початкова дата",
+                        label = stringResource(id = R.string.start_date),
                         date = startDate.value,
                         onDateSelected = { date -> startDate.value = date }
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     ExpenseTransactionDatePickerField(
-                        label = "Кінцева дата",
+                        label = stringResource(id = R.string.end_date),
                         date = endDate.value,
                         onDateSelected = { date -> endDate.value = date }
                     )
@@ -342,12 +343,12 @@ fun ExpenseTransactionPeriodButton(viewModel: ExpenseViewModel, modifier: Modifi
                         .padding(horizontal = 16.dp),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("Зберегти", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(id = R.string.save), style = MaterialTheme.typography.bodyLarge)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { dialogState.value = false }) {
-                    Text("Скасувати", style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold))
+                    Text(stringResource(id = R.string.cancel), style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold))
                 }
             },
             containerColor = Color.DarkGray
@@ -406,7 +407,7 @@ fun AddTransactionDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Додавання нової транзакції",
+                text = stringResource(id = R.string.add_new_transaction),
                 style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold)
             )
         },
@@ -415,7 +416,7 @@ fun AddTransactionDialog(
                 TextField(
                     value = amount,
                     onValueChange = { amount = it },
-                    label = { Text("Сума", style = TextStyle(color = Color.White)) },
+                    label = { Text(stringResource(id = R.string.amount), style = TextStyle(color = Color.White)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     textStyle = TextStyle(color = Color.White, fontWeight = FontWeight.Bold),
                     colors = TextFieldDefaults.textFieldColors(
@@ -444,7 +445,7 @@ fun AddTransactionDialog(
                 TextField(
                     value = comment,
                     onValueChange = { comment = it },
-                    label = { Text("Коментар", style = TextStyle(color = Color.White)) },
+                    label = { Text(stringResource(id = R.string.comment), style = TextStyle(color = Color.White)) },
                     textStyle = TextStyle(color = Color.White, fontWeight = FontWeight.Bold), // Білий шрифт для введення коментаря
                     colors = TextFieldDefaults.textFieldColors(
                         cursorColor = Color.White,
@@ -480,12 +481,12 @@ fun AddTransactionDialog(
                     .padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Text("Зберегти", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(id = R.string.save), style = MaterialTheme.typography.bodyLarge)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Скасувати", color = Color.White)
+                Text(stringResource(id = R.string.cancel), color = Color.White)
             }
         },
         containerColor = Color.DarkGray
@@ -683,13 +684,13 @@ fun EditTransactionDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Редагування транзакції", style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold)) },
+        title = { Text(stringResource(id = R.string.edit_transaction), style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold)) },
         text = {
             Column {
                 TextField(
                     value = updatedAmount,
                     onValueChange = { updatedAmount = it },
-                    label = { Text("Сума", style = TextStyle(color = Color.White)) },
+                    label = { Text(stringResource(id = R.string.amount), style = TextStyle(color = Color.White)) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     textStyle = TextStyle(color = Color.White, fontWeight = FontWeight.Bold),
                     colors = TextFieldDefaults.textFieldColors(
@@ -711,7 +712,7 @@ fun EditTransactionDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF616161))
                 ) {
                     Text(
-                        text = if (updatedDate.isBlank()) "Вибрати дату" else "Дата: $updatedDate",
+                        text = if (updatedDate.isBlank()) stringResource(id = R.string.date) else "${stringResource(id = R.string.date)}: $updatedDate",
                         color = Color.White,
                         style = MaterialTheme.typography.bodyLarge
                     )
@@ -720,7 +721,7 @@ fun EditTransactionDialog(
                 TextField(
                     value = updatedComment,
                     onValueChange = { updatedComment = it },
-                    label = { Text("Коментар", style = TextStyle(color = Color.White)) },
+                    label = { Text(stringResource(id = R.string.comment), style = TextStyle(color = Color.White)) },
                     colors = TextFieldDefaults.textFieldColors(
                         cursorColor = Color.White,
                         focusedIndicatorColor = Color.White,
@@ -751,12 +752,12 @@ fun EditTransactionDialog(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Text("Зберегти", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(id = R.string.save), style = MaterialTheme.typography.bodyLarge)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Скасувати", color = Color.White)
+                Text(stringResource(id = R.string.cancel), color = Color.White)
             }
         },
         containerColor = Color.DarkGray
