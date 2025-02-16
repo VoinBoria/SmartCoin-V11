@@ -70,5 +70,29 @@
     <string name="goal_saved">Ціль збережено</string>
     <string name="you_saved">Ви зберегли</string>
     <string name="enter_valid_value">Введіть допустиме значення</string>
-
+    <string name="task_list_title">Список завдань</string>
+    <string name="overdue_task_message">У вас є прострочені завдання</string>
+    <string name="notification_permission_title">Дозвіл на сповіщення</string>
+    <string name="notification_permission_message">Цей додаток потребує дозволу на сповіщення. Будь ласка, надайте дозвіл.</string>
+    <string name="allow">Дозволити</string>
+    <string name="notification_permission_denied_message">Будь ласка, увімкніть дозволи на повідомлення у налаштуваннях додатка</string>
+    <string name="task_saved_message">Задача збережена</string>
+    <string name="task_reminder_message">Нагадування по задачі "%1$s"</string>
+    <string name="add_task">Додати задачу</string>
+    <string name="edit_task">Редагувати задачу</string>
+    <string name="task_title">Назва задачі</string>
+    <string name="task_description">Опис задачі</string>
+    <string name="reminder">Нагадування: %1$s</string>
+    <string name="reminder_none">Не нагадувати</string>
+    <string name="reminder_10_minutes">За 10 хвилин</string>
+    <string name="reminder_30_minutes">За пів години</string>
+    <string name="reminder_1_hour">За годину</string>
+    <string name="reminder_1_day">За день</string>
+    <string name="reminder_1_week">За тиждень</string>
+    <string name="reminder_10_minutes_display">10 хвилин</string>
+    <string name="reminder_30_minutes_display">пів години</string>
+    <string name="reminder_1_hour_display">годину</string>
+    <string name="reminder_1_day_display">день</string>
+    <string name="reminder_1_week_display">тиждень</string>
+    <string name="completed">Виконано</string>
 </resources>
