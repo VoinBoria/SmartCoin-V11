@@ -52,7 +52,7 @@
     <string name="edit_limit">Редагувати ліміт</string>
     <string name="limit_not_set">не задано</string>
     <string name="spent">Витрачено</string>
-    <string name="goal_amount">Цільова сума (грн)</string>
+    <string name="goal_amount">Цільова сума (%1$s)</string> <!-- Use %1$s for currency placeholder -->
     <string name="goal_period">Період (місяців)</string>
     <string name="calculate">Розрахувати</string>
     <string name="weekly_saving">Щотижневі заощадження</string>
@@ -65,4 +65,10 @@
     <string name="edit_saving">Редагувати заощадження</string>
     <string name="saving_amount">Сума</string>
     <string name="savings_list">Список заощаджень</string>
+    <string name="limit">Ліміт</string>
+    <string name="limit_saved">Ліміт збережено</string>
+    <string name="goal_saved">Ціль збережено</string>
+    <string name="you_saved">Ви зберегли</string>
+    <string name="enter_valid_value">Введіть допустиме значення</string>
+
 </resources>
