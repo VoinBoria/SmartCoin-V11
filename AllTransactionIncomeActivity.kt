@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -51,20 +52,44 @@ import java.util.*
 class AllTransactionIncomeActivity : ComponentActivity() {
     private val viewModel: IncomeViewModel by viewModels { IncomeViewModelFactory(application) }
     private lateinit var updateReceiver: BroadcastReceiver
+    private lateinit var localeReceiver: BroadcastReceiver
 
     private fun <T> navigateToActivity(activityClass: Class<T>) {
         val intent = Intent(this, activityClass)
         startActivity(intent)
     }
 
+    private fun updateLocale(context: Context, language: String) {
+        val locale = Locale(language)
+        Locale.setDefault(locale)
+        val config = context.resources.configuration
+        config.setLocale(locale)
+        context.resources.updateConfiguration(config, context.resources.displayMetrics)
+    }
+
+    private fun getSelectedLanguage(context: Context): String {
+        val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("language", "UK") ?: "UK"
+    }
+
+    private fun getSelectedCurrency(context: Context): String {
+        val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("currency", "UAH") ?: "UAH"
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val selectedLanguage = getSelectedLanguage(this)
+        updateLocale(this, selectedLanguage)
+
         setContent {
             HomeAccountingAppTheme {
                 val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
                 val scope = rememberCoroutineScope()
+                val selectedCurrency = getSelectedCurrency(LocalContext.current)
 
                 ModalNavigationDrawer(
                     drawerState = drawerState,
@@ -91,11 +116,11 @@ class AllTransactionIncomeActivity : ComponentActivity() {
                         topBar = {
                             TopAppBar(
                                 title = {
-                                    Text("Всі транзакції доходів", color = White)
+                                    Text(stringResource(id = R.string.all_transactions_income), color = White)
                                 },
                                 navigationIcon = {
                                     IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                        Icon(Icons.Default.Menu, contentDescription = "Меню", tint = White)
+                                        Icon(Icons.Default.Menu, contentDescription = stringResource(id = R.string.menu), tint = White)
                                     }
                                 },
                                 actions = {
@@ -117,7 +142,8 @@ class AllTransactionIncomeActivity : ComponentActivity() {
                                 AllTransactionIncomeScreen(
                                     viewModel = viewModel,
                                     onDeleteTransaction = { transaction -> deleteTransaction(transaction) },
-                                    onUpdateTransaction = { transaction -> updateTransaction(transaction) }
+                                    onUpdateTransaction = { transaction -> updateTransaction(transaction) },
+                                    selectedCurrency = selectedCurrency
                                 )
                                 PeriodButton(viewModel, Modifier.align(Alignment.BottomStart).padding(16.dp))
                             }
@@ -136,11 +162,24 @@ class AllTransactionIncomeActivity : ComponentActivity() {
         }
         val filter = IntentFilter("com.example.homeaccountingapp.UPDATE_INCOME")
         LocalBroadcastManager.getInstance(this).registerReceiver(updateReceiver, filter)
+
+        localeReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                if (intent.action == "com.example.homeaccountingapp.UPDATE_LOCALE") {
+                    val language = intent.getStringExtra("language") ?: return
+                    updateLocale(context, language)
+                    recreate()
+                }
+            }
+        }
+        val localeFilter = IntentFilter("com.example.homeaccountingapp.UPDATE_LOCALE")
+        LocalBroadcastManager.getInstance(this).registerReceiver(localeReceiver, localeFilter)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         LocalBroadcastManager.getInstance(this).unregisterReceiver(updateReceiver)
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(localeReceiver)
     }
 
     private fun sendUpdateBroadcast() {
@@ -158,6 +197,7 @@ class AllTransactionIncomeActivity : ComponentActivity() {
         sendUpdateBroadcast() // Відправка повідомлення про оновлення
     }
 }
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun PeriodButton(viewModel: IncomeViewModel, modifier: Modifier = Modifier) {
@@ -176,25 +216,25 @@ fun PeriodButton(viewModel: IncomeViewModel, modifier: Modifier = Modifier) {
             containerColor = Color.Transparent // Прозорий фон
         )
     ) {
-        Text("Період", fontWeight = FontWeight.Bold, color = Color.White)
+        Text(stringResource(id = R.string.period), fontWeight = FontWeight.Bold, color = Color.White)
     }
 
     if (dialogState.value) {
         AlertDialog(
             onDismissRequest = { dialogState.value = false },
             title = {
-                Text("Вибір періоду", style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold))
+                Text(stringResource(id = R.string.period_selection), style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold))
             },
             text = {
                 Column {
                     DatePickerField(
-                        label = "Початкова дата",
+                        label = stringResource(id = R.string.start_date),
                         date = startDate.value,
                         onDateSelected = { date -> startDate.value = date }
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     DatePickerField(
-                        label = "Кінцева дата",
+                        label = stringResource(id = R.string.end_date),
                         date = endDate.value,
                         onDateSelected = { date -> endDate.value = date }
                     )
@@ -212,12 +252,12 @@ fun PeriodButton(viewModel: IncomeViewModel, modifier: Modifier = Modifier) {
                         .padding(horizontal = 16.dp),
                     shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text("Зберегти", style = MaterialTheme.typography.bodyLarge)
+                    Text(stringResource(id = R.string.save), style = MaterialTheme.typography.bodyLarge)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { dialogState.value = false }) {
-                    Text("Скасувати", style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold))
+                    Text(stringResource(id = R.string.cancel), style = TextStyle(color = Color.White, fontWeight = FontWeight.Bold))
                 }
             },
             containerColor = Color.DarkGray
@@ -251,13 +291,14 @@ fun showDatePickerDialog(context: Context, initialDate: LocalDate, onDateSelecte
         calendar.get(Calendar.DAY_OF_MONTH)
     ).show()
 }
+
 @Composable
 fun SortMenu(viewModel: IncomeViewModel) {
     var expanded by remember { mutableStateOf(false) }
 
     Box {
         IconButton(onClick = { expanded = true }) {
-            Icon(Icons.Default.Sort, contentDescription = "Сортувати за", tint = White)
+            Icon(Icons.Default.Sort, contentDescription = stringResource(id = R.string.sort_by), tint = White)
         }
         DropdownMenu(
             expanded = expanded,
@@ -265,21 +306,21 @@ fun SortMenu(viewModel: IncomeViewModel) {
             modifier = Modifier.background(Black) // Зміна фону меню на чорний
         ) {
             DropdownMenuItem(
-                text = { Text("За датою", color = White) },
+                text = { Text(stringResource(id = R.string.sort_by_date), color = White) },
                 onClick = {
                     viewModel.sortTransactions(SortType.DATE)
                     expanded = false
                 }
             )
             DropdownMenuItem(
-                text = { Text("За сумою", color = White) },
+                text = { Text(stringResource(id = R.string.sort_by_amount), color = White) },
                 onClick = {
                     viewModel.sortTransactions(SortType.AMOUNT)
                     expanded = false
                 }
             )
             DropdownMenuItem(
-                text = { Text("За категорією", color = White) },
+                text = { Text(stringResource(id = R.string.sort_by_category), color = White) },
                 onClick = {
                     viewModel.sortTransactions(SortType.CATEGORY)
                     expanded = false
@@ -288,13 +329,15 @@ fun SortMenu(viewModel: IncomeViewModel) {
         }
     }
 }
+
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun AllTransactionIncomeScreen(
     viewModel: IncomeViewModel = viewModel(),
     modifier: Modifier = Modifier,
     onDeleteTransaction: (IncomeTransaction) -> Unit,
-    onUpdateTransaction: (IncomeTransaction) -> Unit
+    onUpdateTransaction: (IncomeTransaction) -> Unit,
+    selectedCurrency: String
 ) {
     var selectedTransaction by remember { mutableStateOf<IncomeTransaction?>(null) }
     var showMenuDialog by remember { mutableStateOf(false) }
@@ -327,13 +370,14 @@ fun AllTransactionIncomeScreen(
                                     onClick = {
                                         selectedTransaction = transaction
                                         showMenuDialog = true
-                                    }
+                                    },
+                                    selectedCurrency = selectedCurrency
                                 )
                             }
                             item {
                                 val totalGroupIncome = transactions.sumOf { it.amount }
                                 Text(
-                                    text = "Сума за $date: $totalGroupIncome грн",
+                                    text = "${stringResource(id = R.string.total_amount_for_date)} $date: $totalGroupIncome $selectedCurrency",
                                     style = TextStyle(fontSize = fontSize, fontWeight = FontWeight.Normal, color = White),
                                     modifier = Modifier.padding(padding)
                                 )
@@ -348,7 +392,8 @@ fun AllTransactionIncomeScreen(
                                 onClick = {
                                     selectedTransaction = transaction
                                     showMenuDialog = true
-                                }
+                                },
+                                selectedCurrency = selectedCurrency
                             )
                         }
                     }
@@ -361,13 +406,14 @@ fun AllTransactionIncomeScreen(
                                     onClick = {
                                         selectedTransaction = transaction
                                         showMenuDialog = true
-                                    }
+                                    },
+                                    selectedCurrency = selectedCurrency
                                 )
                             }
                             item {
                                 val totalGroupIncome = transactions.sumOf { it.amount }
                                 Text(
-                                    text = "Всього доходів по категорії: $totalGroupIncome грн",
+                                    text = "${stringResource(id = R.string.total_income_for_category)}: $totalGroupIncome $selectedCurrency",
                                     style = TextStyle(fontSize = fontSize, fontWeight = FontWeight.Normal, color = White),
                                     modifier = Modifier.padding(padding)
                                 )
@@ -405,11 +451,13 @@ fun AllTransactionIncomeScreen(
         }
     }
 }
+
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 fun AllIncomeTransactionItem(
     transaction: IncomeTransaction,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    selectedCurrency: String
 ) {
     BoxWithConstraints {
         val screenWidth = maxWidth
@@ -436,23 +484,23 @@ fun AllIncomeTransactionItem(
         ) {
             Column {
                 Text(
-                    text = "Категорія: ${transaction.category}", // Додавання назви категорії
+                    text = "${stringResource(id = R.string.category)}: ${transaction.category}", // Додавання назви категорії
                     style = MaterialTheme.typography.bodyLarge.copy(color = Color.Green, fontSize = fontSize),
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
                 Text(
-                    text = "Сума: ${transaction.amount} грн",
+                    text = "${stringResource(id = R.string.amount)}: ${transaction.amount} $selectedCurrency",
                     style = MaterialTheme.typography.bodyLarge.copy(color = Color.Green, fontSize = fontSize),
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
                 Text(
-                    text = "Дата: ${transaction.date}",
+                    text = "${stringResource(id = R.string.date)}: ${transaction.date}",
                     style = MaterialTheme.typography.bodyMedium.copy(color = Color.Green, fontSize = fontSize),
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
                 if (!transaction.comments.isNullOrEmpty()) {
                     Text(
-                        text = "Коментар: ${transaction.comments}",
+                        text = "${stringResource(id = R.string.comment)}: ${transaction.comments}",
                         style = MaterialTheme.typography.bodySmall.copy(color = Color.Green, fontSize = fontSize)
                     )
                 }
