@@ -73,7 +73,7 @@
     <string name="task_list_title">Список задач</string>
     <string name="overdue_task_message">У вас есть просроченные задачи</string>
     <string name="notification_permission_title">Разрешение на уведомления</string>
-    <string name="notification_permission_message">Этому приложению необходимо разрешение на уведомления. Пожалуйста, предоставьте разрешение.</string>
+    <string name="notification_permission_message">Этому приложению необходимо разрешение на уведомления. Пожалуйста, предоставьте разрешение</string>
     <string name="allow">Разрешить</string>
     <string name="notification_permission_denied_message">Пожалуйста, включите разрешения на уведомления в настройках приложения</string>
     <string name="task_saved_message">Задача сохранена</string>
@@ -125,4 +125,8 @@
     <string name="charity">Благотворительность</string>
     <string name="sports">Спорт</string>
     <string name="electronics">Техника</string>
+    <string name="other">Другое</string>
+    <string name="salary">Зарплата</string>
+    <string name="bonus">Бонусы</string>
+    <string name="passive_income">Пассивный доход</string>
 </resources>
