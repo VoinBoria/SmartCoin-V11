@@ -44,6 +44,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.sp
@@ -84,6 +85,8 @@ class IncomeActivity : ComponentActivity() {
         IncomeViewModelFactory(application)
     }
     private lateinit var updateReceiver: BroadcastReceiver
+    private var selectedCurrency: String = "UAH" // Значення за замовчуванням
+
     private fun <T> navigateToActivity(activityClass: Class<T>) {
         val intent = Intent(this, activityClass)
         startActivity(intent)
@@ -95,6 +98,9 @@ class IncomeActivity : ComponentActivity() {
 
         loadIncomesFromSharedPreferences()
         loadCategoriesFromSharedPreferences() // Завантаження категорій
+
+        // Отримання вибраної валюти з налаштувань
+        selectedCurrency = getCurrencyFromSettings()
 
         IncomeTransactionResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK) {
@@ -132,10 +138,10 @@ class IncomeActivity : ComponentActivity() {
                     Scaffold(
                         topBar = {
                             TopAppBar(
-                                title = { Text("Доходи", color = Color.White) },
+                                title = { Text(stringResource(R.string.income_title), color = Color.White) },
                                 navigationIcon = {
                                     IconButton(onClick = { scope.launch { drawerState.open() } }) {
-                                        Icon(Icons.Default.Menu, contentDescription = "Меню", tint = Color.White)
+                                        Icon(Icons.Default.Menu, contentDescription = stringResource(R.string.menu_description), tint = Color.White)
                                     }
                                 },
                                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF121212))
@@ -154,6 +160,7 @@ class IncomeActivity : ComponentActivity() {
                                     viewModel.incomeDeleteCategory(category)
                                     sendUpdateBroadcast()
                                 },
+                                selectedCurrency = selectedCurrency, // Передаємо selectedCurrency
                                 modifier = Modifier.padding(innerPadding) // Додаємо innerPadding
                             )
                         }
@@ -176,9 +183,14 @@ class IncomeActivity : ComponentActivity() {
         LocalBroadcastManager.getInstance(this).registerReceiver(updateReceiver, filter)
     }
 
+    private fun getCurrencyFromSettings(): String {
+        val sharedPreferences = getSharedPreferences("settings", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("currency", "UAH") ?: "UAH"
+    }
+
     private fun sendUpdateBroadcast() {
         val updateIntent = Intent("com.example.homeaccountingapp.UPDATE_INCOME")
-        LocalBroadcastManager.getInstance(getApplication()).sendBroadcast(updateIntent)
+        LocalBroadcastManager.getInstance(application).sendBroadcast(updateIntent)
     }
 
     private fun loadIncomesFromSharedPreferences() {
@@ -417,6 +429,7 @@ fun IncomeScreen(
     viewModel: IncomeViewModel,
     onOpenIncomeTransactionScreen: (String, String) -> Unit,
     onincomeDeleteCategory: (String) -> Unit,
+    selectedCurrency: String, // Додано параметр selectedCurrency
     modifier: Modifier = Modifier
 ) {
     BoxWithConstraints {
@@ -472,7 +485,8 @@ fun IncomeScreen(
                                 onEdit = {
                                     categoryToEdit = category
                                     showIncomeEditCategoryDialog = true
-                                }
+                                },
+                                selectedCurrency = selectedCurrency // Передаємо selectedCurrency
                             )
                         }
                     }
@@ -501,7 +515,7 @@ fun IncomeScreen(
                             .widthIn(max = if (screenWidth < 360.dp) 200.dp else 250.dp)
                     ) {
                         IncomeMenuButton(
-                            text = "Додати транзакцію",
+                            text = stringResource(id = R.string.add_transaction),
                             backgroundColors = listOf(
                                 Color(0xFF006400).copy(alpha = 0.7f),
                                 Color(0xFF228B22).copy(alpha = 0.1f)
@@ -513,7 +527,7 @@ fun IncomeScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         IncomeMenuButton(
-                            text = "Додати категорію",
+                            text = stringResource(id = R.string.add_category_income),
                             backgroundColors = listOf(
                                 Color(0xFF00008B).copy(alpha = 0.7f),
                                 Color(0xFF4682B4).copy(alpha = 0.1f)
@@ -533,13 +547,13 @@ fun IncomeScreen(
                     .padding(30.dp)
             ) {
                 Text(
-                    text = "Загальні Доходи:",
+                    text = stringResource(id = R.string.total_income),
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.White,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 Text(
-                    text = "${totalIncome.incomeFormatAmount(2)} грн",
+                    text = "${totalIncome.incomeFormatAmount(2)} $selectedCurrency",
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     color = Color.White
                 )
@@ -560,7 +574,7 @@ fun IncomeScreen(
                         .widthIn(max = if (screenWidth < 360.dp) 250.dp else 300.dp)
                 ) {
                     Text(
-                        text = "Ви впевнені, що хочете видалити цю категорію?",
+                        text = stringResource(id = R.string.confirm_delete_category_income),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White,
                         modifier = Modifier.padding(bottom = 16.dp)
@@ -575,7 +589,7 @@ fun IncomeScreen(
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4682B4))
                         ) {
-                            Text("Ні", color = Color.White)
+                            Text(stringResource(id = R.string.no_income), color = Color.White)
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Button(
@@ -587,7 +601,7 @@ fun IncomeScreen(
                             },
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B0000))
                         ) {
-                            Text("Так", color = Color.White)
+                            Text(stringResource(id = R.string.yes_income), color = Color.White)
                         }
                     }
                 }
@@ -636,7 +650,8 @@ fun IncomeCategoryRow(
     IncomeAmount: Double,
     onClick: () -> Unit,
     onDelete: () -> Unit,
-    onEdit: () -> Unit
+    onEdit: () -> Unit,
+    selectedCurrency: String // Додано параметр selectedCurrency
 ) {
     BoxWithConstraints {
         val screenWidth = maxWidth
@@ -668,7 +683,7 @@ fun IncomeCategoryRow(
                 modifier = Modifier.weight(1f)
             )
             Text(
-                text = "${IncomeAmount.incomeFormatAmount(2)} грн",
+                text = "${IncomeAmount.incomeFormatAmount(2)} $selectedCurrency",
                 style = MaterialTheme.typography.bodyLarge.copy(fontSize = fontSize),
                 color = Color.White,
                 modifier = Modifier.padding(end = 8.dp)
@@ -677,14 +692,14 @@ fun IncomeCategoryRow(
                 IconButton(onClick = onEdit) {
                     Icon(
                         imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit Category",
+                        contentDescription = stringResource(id = R.string.edit_category),
                         tint = Color.White
                     )
                 }
                 IconButton(onClick = onDelete) {
                     Icon(
                         imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete Category",
+                        contentDescription = stringResource(id = R.string.delete_category),
                         tint = Color.White
                     )
                 }
@@ -707,7 +722,7 @@ fun IncomeEditCategoryDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Редагувати категорію",
+                text = stringResource(id = R.string.edit_category),
                 style = MaterialTheme.typography.titleLarge,
                 color = Color.White
             )
@@ -717,7 +732,7 @@ fun IncomeEditCategoryDialog(
                 OutlinedTextField(
                     value = newCategoryName,
                     onValueChange = { newCategoryName = it },
-                    label = { Text("Нова назва категорії", color = Color.Gray) },
+                    label = { Text(stringResource(id = R.string.new_category_name), color = Color.Gray) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp),
@@ -742,12 +757,12 @@ fun IncomeEditCategoryDialog(
                     }
                 }
             ) {
-                Text("Зберегти", color = Color.White)
+                Text(stringResource(id = R.string.save), color = Color.White)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Закрити", color = Color.Gray)
+                Text(stringResource(id = R.string.close), color = Color.Gray)
             }
         },
         containerColor = Color(0xFF2B2B2B)
@@ -794,7 +809,7 @@ fun IncomeAddCategoryDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                text = "Додати категорію",
+                text = stringResource(id = R.string.add_category_income),
                 style = MaterialTheme.typography.titleLarge,
                 color = Color.White
             )
@@ -804,7 +819,7 @@ fun IncomeAddCategoryDialog(
                 OutlinedTextField(
                     value = categoryName,
                     onValueChange = { categoryName = it },
-                    label = { Text("Назва категорії", color = Color.Gray) },
+                    label = { Text(stringResource(id = R.string.category_name), color = Color.Gray) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp),
@@ -829,12 +844,12 @@ fun IncomeAddCategoryDialog(
                     }
                 }
             ) {
-                Text("Зберегти", color = Color.White)
+                Text(stringResource(id = R.string.save), color = Color.White)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Закрити", color = Color.Gray)
+                Text(stringResource(id = R.string.close), color = Color.Gray)
             }
         },
         containerColor = Color(0xFF2B2B2B)
@@ -900,7 +915,7 @@ fun IncomeAddIncomeTransactionDialog(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Додати дохід",
+                text = stringResource(id = R.string.add_income),
                 style = MaterialTheme.typography.titleLarge.copy(
                     fontWeight = FontWeight.Bold,
                     color = Color.Green
@@ -916,7 +931,7 @@ fun IncomeAddIncomeTransactionDialog(
                         amount = newValue
                     }
                 },
-                label = { Text("Сума", color = Color.White) },
+                label = { Text(stringResource(id = R.string.amount), color = Color.White) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
@@ -945,7 +960,7 @@ fun IncomeAddIncomeTransactionDialog(
                 colors = ButtonDefaults.buttonColors(containerColor = Color.Yellow)
             ) {
                 Text(
-                    text = "Дата: $date",
+                    text = "${stringResource(id = R.string.date)}: $date",
                     color = Color.Black,
                     style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold)
                 )
@@ -961,7 +976,7 @@ fun IncomeAddIncomeTransactionDialog(
                         filteredCategories = categories.filter { it.contains(query, true) }
                         isDropdownExpanded = true
                     },
-                    label = { Text("Категорія") },
+                    label = { Text(stringResource(id = R.string.category)) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .menuAnchor(),
@@ -1003,7 +1018,7 @@ fun IncomeAddIncomeTransactionDialog(
             OutlinedTextField(
                 value = comment,
                 onValueChange = { comment = it },
-                label = { Text("Коментар", color = Color.White) },
+                label = { Text(stringResource(id = R.string.comment), color = Color.White) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
@@ -1028,7 +1043,7 @@ fun IncomeAddIncomeTransactionDialog(
                     onClick = onDismiss,
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Gray)
                 ) {
-                    Text("Скасувати", color = Color.White)
+                    Text(stringResource(id = R.string.close), color = Color.White)
                 }
                 Button(
                     onClick = {
@@ -1045,7 +1060,7 @@ fun IncomeAddIncomeTransactionDialog(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
                 ) {
-                    Text("Зберегти", color = Color.White)
+                    Text(stringResource(id = R.string.save), color = Color.White)
                 }
             }
         }
