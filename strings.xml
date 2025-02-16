@@ -125,5 +125,8 @@
     <string name="charity">Charity</string>
     <string name="sports">Sports</string>
     <string name="electronics">Electronics</string>
-
+    <string name="other">Other</string>
+    <string name="salary">Salary</string>
+    <string name="bonus">Bonus</string>
+    <string name="passive_income">Passive income</string>
 </resources>
