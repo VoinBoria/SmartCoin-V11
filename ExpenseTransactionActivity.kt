@@ -68,6 +68,7 @@ class ExpenseTransactionActivity : ComponentActivity() {
         val type = object : TypeToken<List<Transaction>>() {}.type
         val transactions = gson.fromJson<List<Transaction>>(transactionsJson, type).toMutableList()
         val filteredTransactions = transactions.filter { it.category == categoryName }
+        val selectedCurrency = getSelectedCurrency(this)
 
         setContent {
             HomeAccountingAppTheme {
@@ -123,6 +124,7 @@ class ExpenseTransactionActivity : ComponentActivity() {
                                 ExpenseTransactionScreen(
                                     categoryName = categoryName,
                                     initialTransactions = filteredTransactions,
+                                    selectedCurrency = selectedCurrency,
                                     onUpdateTransactions = { updatedTransactions ->
                                         viewModel.updateTransactions(updatedTransactions)
                                         saveTransactionsToStorage(updatedTransactions)
@@ -136,9 +138,14 @@ class ExpenseTransactionActivity : ComponentActivity() {
         }
     }
 
+
     private fun navigateToActivity(activityClass: Class<*>) {
         val intent = Intent(this, activityClass)
         startActivity(intent)
+    }
+    private fun getSelectedCurrency(context: Context): String {
+        val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("currency", "UAH") ?: "UAH"
     }
 
     private fun saveTransactionsToStorage(updatedTransactions: List<Transaction>) {
@@ -174,6 +181,7 @@ class ExpenseTransactionActivity : ComponentActivity() {
 fun ExpenseTransactionScreen(
     categoryName: String,
     initialTransactions: List<Transaction>,
+    selectedCurrency: String,
     onUpdateTransactions: (List<Transaction>) -> Unit,
     viewModel: ExpenseViewModel = viewModel()
 ) {
@@ -216,6 +224,7 @@ fun ExpenseTransactionScreen(
                 items(filteredTransactions.filter { it.category == categoryName }) { transaction ->
                     TransactionItem(
                         transaction = transaction,
+                        selectedCurrency = selectedCurrency,
                         onClick = {
                             selectedTransaction = transaction
                             showMenuDialog = true
@@ -285,7 +294,7 @@ fun ExpenseTransactionScreen(
                 color = Color.White
             )
             Text(
-                text = "${totalExpenseForFilteredTransactions.formatAmount(2)} ${stringResource(id = R.string.currency_uah)}",
+                text = "${totalExpenseForFilteredTransactions.formatAmount(2)} $selectedCurrency",
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = Color.Red // Червоний колір для загальної суми
             )
@@ -531,6 +540,7 @@ fun DatePickerDialogComponent(onDateSelected: (String) -> Unit) {
 @Composable
 fun TransactionItem(
     transaction: Transaction,
+    selectedCurrency: String,
     onClick: () -> Unit
 ) {
     Box(
@@ -553,18 +563,18 @@ fun TransactionItem(
     ) {
         Column {
             Text(
-                text = "Сума: ${transaction.amount} грн",
+                text = "${stringResource(id = R.string.amount)}: ${transaction.amount} $selectedCurrency",
                 style = MaterialTheme.typography.bodyLarge.copy(color = Color.Red),
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             Text(
-                text = "Дата: ${transaction.date}",
+                text = "${stringResource(id = R.string.date)}: ${transaction.date}",
                 style = MaterialTheme.typography.bodyMedium.copy(color = Color.Red),
                 modifier = Modifier.padding(bottom = 4.dp)
             )
             if (!transaction.comments.isNullOrEmpty()) {
                 Text(
-                    text = "Коментар: ${transaction.comments}",
+                    text = "${stringResource(id = R.string.comment)}: ${transaction.comments}",
                     style = MaterialTheme.typography.bodySmall.copy(color = Color.Red)
                 )
             }
