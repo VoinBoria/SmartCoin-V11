@@ -199,7 +199,7 @@ class ExpenseActivity : ComponentActivity() {
         val categoriesList: List<String> = if (categoriesJson != null) {
             Gson().fromJson(categoriesJson, object : TypeToken<List<String>>() {}.type)
         } else {
-            val defaultCategories = viewModel.getStandardCategories(context)
+            val defaultCategories = StandardCategories.getStandardExpenseCategories(context)
             viewModel.saveCategories(defaultCategories)
             defaultCategories
         }
@@ -232,7 +232,6 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
     private val _sortedTransactions = MutableStateFlow<List<Transaction>>(emptyList())
     val sortedTransactions: StateFlow<List<Transaction>> = _sortedTransactions
 
-    // Створення властивості для зберігання функції
     private var sendUpdateBroadcast: (() -> Unit)? = null
 
     init {
@@ -249,25 +248,6 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
         sendUpdateBroadcast?.invoke()
     }
 
-    fun getStandardCategories(context: Context): List<String> {
-        return listOf(
-            context.getString(R.string.rent),
-            context.getString(R.string.utilities),
-            context.getString(R.string.transport),
-            context.getString(R.string.entertainment),
-            context.getString(R.string.groceries),
-            context.getString(R.string.clothing),
-            context.getString(R.string.health),
-            context.getString(R.string.education),
-            context.getString(R.string.gifts),
-            context.getString(R.string.hobbies),
-            context.getString(R.string.charity),
-            context.getString(R.string.sports),
-            context.getString(R.string.electronics)
-        )
-    }
-
-    // Функція для завантаження даних
     fun loadData() {
         categories = loadCategories()
         _transactions.value = loadTransactions()
@@ -392,7 +372,10 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
         return if (json != null) {
             gson.fromJson(json, object : TypeToken<List<String>>() {}.type)
         } else {
-            emptyList()
+            val context = getApplication<Application>().applicationContext
+            val defaultCategories = StandardCategories.getStandardExpenseCategories(context)
+            saveCategories(defaultCategories)
+            defaultCategories
         }
     }
 
@@ -441,6 +424,7 @@ class ExpenseViewModel(application: Application) : AndroidViewModel(application)
         private const val TAG = "ExpenseViewModel"
     }
 }
+
 @RequiresApi(Build.VERSION_CODES.O)
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
