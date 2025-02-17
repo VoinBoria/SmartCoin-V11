@@ -66,6 +66,8 @@ class IncomeTransactionActivity : ComponentActivity() {
         // Завантажуємо дані для вибраної категорії
         viewModel.filterByCategory(categoryName)
 
+        val selectedCurrency = getSelectedCurrency(this)
+
         setContent {
             HomeAccountingAppTheme {
                 val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -124,6 +126,7 @@ class IncomeTransactionActivity : ComponentActivity() {
                             ) {
                                 IncomeTransactionScreen(
                                     categoryName = categoryName,
+                                    selectedCurrency = selectedCurrency,
                                     onUpdateTransactions = { updatedTransactions ->
                                         saveTransactionsIncome(updatedTransactions, categoryName)
                                     }
@@ -139,6 +142,10 @@ class IncomeTransactionActivity : ComponentActivity() {
     private fun navigateToActivity(activityClass: Class<*>) {
         val intent = Intent(this, activityClass)
         startActivity(intent)
+    }
+    private fun getSelectedCurrency(context: Context): String {
+        val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("currency", "UAH") ?: "UAH"
     }
 
     private fun saveTransactionsIncome(updatedTransactions: List<IncomeTransaction>, categoryName: String) {
@@ -262,6 +269,7 @@ fun showIncomeDatePickerDialog(context: Context, initialDate: LocalDate, onDateS
 @Composable
 fun IncomeTransactionScreen(
     categoryName: String,
+    selectedCurrency: String,
     onUpdateTransactions: (List<IncomeTransaction>) -> Unit,
     viewModel: IncomeViewModel = viewModel()
 ) {
@@ -322,6 +330,7 @@ fun IncomeTransactionScreen(
                 items(transactions) { transaction ->
                     IncomeTransactionItem(
                         transaction = transaction,
+                        selectedCurrency = selectedCurrency,
                         onClick = {
                             selectedTransaction = transaction
                             showMenuDialog = true
@@ -398,7 +407,7 @@ fun IncomeTransactionScreen(
                 color = Color.White
             )
             Text(
-                text = "${totalIncomeForFilteredTransactions.incomeFormatAmount(2)} ${stringResource(id = R.string.currency_uah)}",
+                text = "${totalIncomeForFilteredTransactions.incomeFormatAmount(2)} $selectedCurrency",
                 style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 color = Color.Green // Зелений колір для суми доходів
             )
@@ -517,6 +526,7 @@ fun IncomeAddTransactionDialog(
 @Composable
 fun IncomeTransactionItem(
     transaction: IncomeTransaction,
+    selectedCurrency: String,
     onClick: () -> Unit
 ) {
     Box(
@@ -539,7 +549,7 @@ fun IncomeTransactionItem(
     ) {
         Column {
             Text(
-                text = "Сума: ${transaction.amount} грн",
+                text = "Сума: ${transaction.amount} $selectedCurrency",
                 style = MaterialTheme.typography.bodyLarge.copy(color = Color.Green),
                 modifier = Modifier.padding(bottom = 4.dp)
             )
