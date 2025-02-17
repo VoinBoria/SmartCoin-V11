@@ -250,25 +250,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _incomeCategories = MutableLiveData<List<String>>()
     val incomeCategories: LiveData<List<String>> = _incomeCategories
-    // Списки стандартних категорій
-    private val standardExpenseCategories = listOf(
-        application.getString(R.string.rent),
-        application.getString(R.string.utilities),
-        application.getString(R.string.transport),
-        application.getString(R.string.entertainment),
-        application.getString(R.string.groceries),
-        application.getString(R.string.clothing),
-        application.getString(R.string.health),
-        application.getString(R.string.education),
-        application.getString(R.string.other)
-    )
-
-    private val standardIncomeCategories = listOf(
-        application.getString(R.string.salary),
-        application.getString(R.string.bonus),
-        application.getString(R.string.gifts),
-        application.getString(R.string.passive_income)
-    )
 
     init {
         loadStandardCategories()
@@ -276,8 +257,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // Метод для завантаження стандартних категорій
     fun loadStandardCategories() {
-        val expenseCategories = loadCategories(sharedPreferencesExpense, standardExpenseCategories)
-        val incomeCategories = loadCategories(sharedPreferencesIncome, standardIncomeCategories)
+        val context = getApplication<Application>().applicationContext
+        val expenseCategories = loadCategories(sharedPreferencesExpense, StandardCategories.getStandardExpenseCategories(context))
+        val incomeCategories = loadCategories(sharedPreferencesIncome, StandardCategories.getStandardIncomeCategories(context))
 
         _expenseCategories.value = expenseCategories
         _incomeCategories.value = incomeCategories
