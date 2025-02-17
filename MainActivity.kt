@@ -74,19 +74,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             HomeAccountingAppTheme {
-                val showSplashScreen = intent.getBooleanExtra("SHOW_SPLASH_SCREEN", true)
-
-                if (showSplashScreen) {
-                    SplashScreen(onTimeout = {
-                        // Після таймауту сплеш-екрану, оновлюємо `SHOW_SPLASH_SCREEN` і відображаємо основний контент
-                        intent.putExtra("SHOW_SPLASH_SCREEN", false)
-                        setContent {
-                            MainContent()
-                        }
-                    })
-                } else {
-                    MainContent()
-                }
+                MainContent()
             }
         }
 
@@ -96,7 +84,7 @@ class MainActivity : ComponentActivity() {
                     intent.action == "com.example.homeaccountingapp.UPDATE_INCOME") {
                     viewModel.refreshExpenses()
                     viewModel.refreshIncomes()
-                    viewModel.refreshCategories() // Оновлення категорій
+                    viewModel.refreshCategories()
                 }
             }
         }
@@ -116,10 +104,13 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun MainContent() {
         val context = LocalContext.current
-        var selectedCurrency by remember { mutableStateOf(getSelectedCurrency(context)) }
-        var selectedLanguage by remember { mutableStateOf(getSelectedLanguage(context)) }
+        val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        var selectedCurrency by remember { mutableStateOf(getSelectedCurrency(sharedPreferences)) }
+        var selectedLanguage by remember { mutableStateOf(getSelectedLanguage(sharedPreferences)) }
+        var tempSelectedCurrency by remember { mutableStateOf(selectedCurrency) }
+        var tempSelectedLanguage by remember { mutableStateOf(selectedLanguage) }
 
-        updateLocale(context, selectedLanguage) // Додано
+        // Видалено LaunchedEffect для негайного оновлення локалі
 
         MainScreen(
             onNavigateToMainActivity = {
@@ -173,29 +164,37 @@ class MainActivity : ComponentActivity() {
                 }
                 context.startActivity(intent)
             },
-            selectedCurrency = selectedCurrency,
-            onCurrencySelected = { selectedCurrency = it },
-            selectedLanguage = selectedLanguage,
-            onLanguageSelected = {
-                selectedLanguage = it
-                updateLocale(context, it)
+            selectedCurrency = tempSelectedCurrency,
+            onCurrencySelected = { currency ->
+                tempSelectedCurrency = currency
             },
-            updateLocale = ::updateLocale, // Доданий параметр
-            currency = selectedCurrency // Доданий параметр
+            selectedLanguage = tempSelectedLanguage,
+            onLanguageSelected = { language ->
+                tempSelectedLanguage = language
+            },
+            onSaveSettings = {
+                selectedCurrency = tempSelectedCurrency
+                selectedLanguage = tempSelectedLanguage
+                saveSettings(sharedPreferences, selectedLanguage, selectedCurrency)
+                updateLocale(context, selectedLanguage)
+                // Перезапускаємо MainActivity
+                val restartIntent = Intent(context, MainActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+                    putExtra("SHOW_SPLASH_SCREEN", false)
+                }
+                context.startActivity(restartIntent)
+            },
+            updateLocale = ::updateLocale,
+            currency = selectedCurrency
         )
     }
 
-    private fun getSelectedCurrency(context: Context): String {
-        val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+    private fun getSelectedCurrency(sharedPreferences: SharedPreferences): String {
         return sharedPreferences.getString("currency", "UAH") ?: "UAH"
     }
 
-    // Додаємо виклик updateLocale(context, selectedLanguage) після зчитування налаштувань
-    private fun getSelectedLanguage(context: Context): String {
-        val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
-        val language = sharedPreferences.getString("language", "UK") ?: "UK"
-        updateLocale(context, language) // Додано
-        return language
+    private fun getSelectedLanguage(sharedPreferences: SharedPreferences): String {
+        return sharedPreferences.getString("language", "UK") ?: "UK"
     }
 
     private fun updateLocale(context: Context, language: String) {
@@ -204,6 +203,14 @@ class MainActivity : ComponentActivity() {
         val config = context.resources.configuration
         config.setLocale(locale)
         context.resources.updateConfiguration(config, context.resources.displayMetrics)
+    }
+
+    private fun saveSettings(sharedPreferences: SharedPreferences, language: String, currency: String) {
+        with(sharedPreferences.edit()) {
+            putString("language", language)
+            putString("currency", currency)
+            apply()
+        }
     }
 }
 // Функція Splash Screen
@@ -461,6 +468,7 @@ fun MainScreen(
     selectedLanguage: String,
     onLanguageSelected: (String) -> Unit,
     updateLocale: (Context, String) -> Unit, // Доданий параметр
+    onSaveSettings: () -> Unit, // Доданий параметр
     currency: String // Доданий параметр
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
@@ -820,11 +828,9 @@ fun MainScreen(
                         SettingsMenu(
                             onDismiss = { showSettingsMenu = false },
                             onCurrencySelected = onCurrencySelected,
-                            onLanguageSelected = { language ->
-                                onLanguageSelected(language)
-                                updateLocale(context, language)
-                            },
-                            updateLocale = updateLocale // Додано цей параметр
+                            onLanguageSelected = onLanguageSelected,
+                            updateLocale = updateLocale, // Додано цей параметр
+                            onSaveSettings = onSaveSettings // Додано цей параметр
                         )
                     }
 
