@@ -129,4 +129,22 @@
     <string name="salary">Зарплата</string>
     <string name="bonus">Бонуси</string>
     <string name="passive_income">Пасивний дохід</string>
+    <string name="income_title">Доходи</string>
+    <string name="add_income">Додати дохід</string>
+    <string name="add_category_income">Додати категорію доходів</string>
+    <string name="total_income">Загальні доходи</string>
+    <string name="confirm_delete_category_income">Ви впевнені, що хочете видалити цю категорію доходу?</string>
+    <string name="no_income">Ні</string>
+    <string name="yes_income">Так</string>
+    <string name="main_menu">Головне меню</string>
+    <string name="main_menu_icon">Іконка головного меню</string>
+    <string name="incomes_icon">Іконка доходів</string>
+    <string name="expenses_icon">Іконка витрат</string>
+    <string name="all_income_transactions">Всі транзакції доходів</string>
+    <string name="all_expense_transactions">Всі транзакції витрат</string>
+    <string name="issued_on_loan_icon">Іконка виданих боргів</string>
+    <string name="borrowed_icon">Іконка отриманих боргів</string>
+    <string name="budget_planning_icon">Іконка планування бюджету</string>
+    <string name="task_manager">Задачник</string>
+
 </resources>
