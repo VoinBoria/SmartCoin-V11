@@ -208,7 +208,7 @@ class IncomeActivity : ComponentActivity() {
         val categoriesList: List<String> = if (categoriesJson != null) {
             Gson().fromJson(categoriesJson, object : TypeToken<List<String>>() {}.type)
         } else {
-            val defaultCategories = viewModel.getStandardCategories()
+            val defaultCategories = StandardCategories.getStandardIncomeCategories(application.applicationContext)
             viewModel.saveCategories(defaultCategories)
             defaultCategories
         }
@@ -276,10 +276,6 @@ class IncomeViewModel(application: Application) : AndroidViewModel(application) 
         val json = gson.toJson(transactions)
         incomesharedPreferences.edit().putString("IncomeTransactions", json).apply()
         sendUpdateBroadcast?.invoke()
-    }
-
-    fun getStandardCategories(): List<String> {
-        return listOf("Зарплата", "Премія", "Подарунки", "Пасивний дохід")
     }
 
     fun loadDataIncome() {
@@ -401,7 +397,10 @@ class IncomeViewModel(application: Application) : AndroidViewModel(application) 
         return if (json != null) {
             gson.fromJson(json, object : TypeToken<List<String>>() {}.type)
         } else {
-            emptyList()
+            val context = getApplication<Application>().applicationContext
+            val defaultCategories = StandardCategories.getStandardIncomeCategories(context)
+            saveCategories(defaultCategories)
+            defaultCategories
         }
     }
 
