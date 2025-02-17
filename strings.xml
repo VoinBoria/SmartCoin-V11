@@ -129,4 +129,21 @@
     <string name="salary">Salary</string>
     <string name="bonus">Bonus</string>
     <string name="passive_income">Passive income</string>
+    <string name="income_title">Income</string>
+    <string name="add_category_income">Add Income Category</string>
+    <string name="total_income">Total Incomes</string>
+    <string name="confirm_delete_category_income">Are you sure you want to delete this income category?</string>
+    <string name="no_income">No</string>
+    <string name="yes_income">Yes</string>
+    <string name="add_income">Add income</string>
+    <string name="main_menu">Main menu</string>
+    <string name="main_menu_icon">Main menu icon</string>
+    <string name="incomes_icon">Incomes icon</string>
+    <string name="expenses_icon">Expenses icon</string>
+    <string name="all_income_transactions">All income transactions</string>
+    <string name="all_expense_transactions">All expense transactions</string>
+    <string name="issued_on_loan_icon">Issued on loan_icon</string>
+    <string name="borrowed_icon">Borrowed_icon</string>
+    <string name="budget_planning_icon">Budget planning_icon</string>
+    <string name="task_manager">Task manager</string>
 </resources>
