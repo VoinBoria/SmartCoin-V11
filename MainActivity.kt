@@ -823,7 +823,8 @@ fun MainScreen(
                             onLanguageSelected = { language ->
                                 onLanguageSelected(language)
                                 updateLocale(context, language)
-                            }
+                            },
+                            updateLocale = updateLocale // Додано цей параметр
                         )
                     }
 
