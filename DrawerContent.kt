@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -51,17 +52,17 @@ fun DrawerContent(
             .verticalScroll(rememberScrollState())  // Enable vertical scrolling
     ) {
         Text(
-            text = "Меню",
+            text = stringResource(id = R.string.menu),
             style = MaterialTheme.typography.titleLarge.copy(color = Color.White, fontSize = textSize)
         )
         Spacer(modifier = Modifier.height(20.dp))  // Adjust space for small screens
         Column(modifier = Modifier.fillMaxWidth()) {
             CategoryItem(
-                text = "Головне меню",
+                text = stringResource(id = R.string.main_menu),
                 icon = {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_home),
-                        contentDescription = "Іконка головного меню",
+                        contentDescription = stringResource(id = R.string.main_menu_icon),
                         tint = Color.White,
                         modifier = Modifier.size(iconSize)
                     )
@@ -74,11 +75,11 @@ fun DrawerContent(
             )
             Spacer(modifier = Modifier.height(8.dp))
             CategoryItem(
-                text = "Доходи",
+                text = stringResource(id = R.string.incomes),
                 icon = {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_income),
-                        contentDescription = "Іконка доходів",
+                        contentDescription = stringResource(id = R.string.incomes_icon),
                         tint = Color.White,
                         modifier = Modifier.size(iconSize)
                     )
@@ -91,11 +92,11 @@ fun DrawerContent(
             )
             Spacer(modifier = Modifier.height(8.dp))
             CategoryItem(
-                text = "Витрати",
+                text = stringResource(id = R.string.expenses),
                 icon = {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_expense),
-                        contentDescription = "Іконка витрат",
+                        contentDescription = stringResource(id = R.string.expenses_icon),
                         tint = Color.White,
                         modifier = Modifier.size(iconSize)
                     )
@@ -108,11 +109,11 @@ fun DrawerContent(
             )
             Spacer(modifier = Modifier.height(8.dp))
             CategoryItem(
-                text = "Всі транзакції доходів",
+                text = stringResource(id = R.string.all_income_transactions),
                 icon = {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_all_income_transactions),
-                        contentDescription = "Іконка всіх транзакцій доходів",
+                        contentDescription = stringResource(id = R.string.all_income_transactions),
                         tint = Color.White,
                         modifier = Modifier.size(iconSize)
                     )
@@ -125,11 +126,11 @@ fun DrawerContent(
             )
             Spacer(modifier = Modifier.height(8.dp))
             CategoryItem(
-                text = "Всі транзакції витрат",
+                text = stringResource(id = R.string.all_expense_transactions),
                 icon = {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_all_expense_transactions),
-                        contentDescription = "Іконка всіх транзакцій витрат",
+                        contentDescription = stringResource(id = R.string.all_expense_transactions),
                         tint = Color.White,
                         modifier = Modifier.size(iconSize)
                     )
@@ -142,11 +143,11 @@ fun DrawerContent(
             )
             Spacer(modifier = Modifier.height(8.dp))
             CategoryItem(
-                text = "Видано в борг",
+                text = stringResource(id = R.string.issued_on_loan),
                 icon = {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_loan_issued),
-                        contentDescription = "Іконка виданих боргів",
+                        contentDescription = stringResource(id = R.string.issued_on_loan_icon),
                         tint = Color.White,
                         modifier = Modifier.size(iconSize)
                     )
@@ -159,11 +160,11 @@ fun DrawerContent(
             )
             Spacer(modifier = Modifier.height(8.dp))
             CategoryItem(
-                text = "Отримано в борг",
+                text = stringResource(id = R.string.borrowed),
                 icon = {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_loan_borrowed),
-                        contentDescription = "Іконка отриманих боргів",
+                        contentDescription = stringResource(id = R.string.borrowed_icon),
                         tint = Color.White,
                         modifier = Modifier.size(iconSize)
                     )
@@ -176,11 +177,11 @@ fun DrawerContent(
             )
             Spacer(modifier = Modifier.height(8.dp))
             CategoryItem(
-                text = "Планування бюджету",
+                text = stringResource(id = R.string.budget_planning),
                 icon = {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_budget_planning),
-                        contentDescription = "Іконка планування бюджету",
+                        contentDescription = stringResource(id = R.string.budget_planning_icon),
                         tint = Color.White,
                         modifier = Modifier.size(iconSize)
                     )
@@ -193,11 +194,11 @@ fun DrawerContent(
             )
             Spacer(modifier = Modifier.height(8.dp))
             CategoryItem(
-                text = "Задачник",
+                text = stringResource(id = R.string.task_manager),
                 icon = {
                     Icon(
                         painter = painterResource(id = R.drawable.ic_task),
-                        contentDescription = "Іконка задачника",
+                        contentDescription = stringResource(id = R.string.task_manager),
                         tint = Color.White,
                         modifier = Modifier.size(iconSize)
                     )
