@@ -180,7 +180,8 @@ class MainActivity : ComponentActivity() {
                 selectedLanguage = it
                 updateLocale(context, it)
             },
-            updateLocale = ::updateLocale // Доданий параметр
+            updateLocale = ::updateLocale, // Доданий параметр
+            currency = selectedCurrency // Доданий параметр
         )
     }
 
@@ -459,7 +460,8 @@ fun MainScreen(
     onCurrencySelected: (String) -> Unit,
     selectedLanguage: String,
     onLanguageSelected: (String) -> Unit,
-    updateLocale: (Context, String) -> Unit // Доданий параметр
+    updateLocale: (Context, String) -> Unit, // Доданий параметр
+    currency: String // Доданий параметр
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
@@ -591,7 +593,8 @@ fun MainScreen(
                                             onClick = { showIncomes = !showIncomes },
                                             textColor = Color(0xFF00FF00), // Яскравий зелений колір тексту
                                             fontWeight = FontWeight.Bold,  // Жирний шрифт
-                                            fontSize = 18.sp // Збільшення шрифту
+                                            fontSize = 18.sp, // Збільшення шрифту
+                                            currency = currency // Доданий параметр
                                         )
                                     }
 
@@ -601,7 +604,7 @@ fun MainScreen(
                                                 .heightIn(max = 200.dp) // Обмеження висоти списку
                                                 .verticalScroll(rememberScrollState())
                                         ) {
-                                            IncomeList(incomes = incomes, onCategoryClick = onIncomeCategoryClick)
+                                            IncomeList(incomes = incomes, onCategoryClick = onIncomeCategoryClick, currency = currency)
                                         }
                                     }
                                     Spacer(modifier = Modifier.height(16.dp))
@@ -625,7 +628,8 @@ fun MainScreen(
                                             onClick = { showExpenses = !showExpenses },
                                             textColor = Color(0xFFFF0000), // Яскравий червоний колір тексту
                                             fontWeight = FontWeight.Bold,  // Жирний шрифт
-                                            fontSize = 18.sp // Збільшення шрифту
+                                            fontSize = 18.sp, // Збільшення шрифту
+                                            currency = currency // Доданий параметр
                                         )
                                     }
 
@@ -635,7 +639,7 @@ fun MainScreen(
                                                 .heightIn(max = 200.dp) // Обмеження висоти списку
                                                 .verticalScroll(rememberScrollState())
                                         ) {
-                                            ExpensesList(expenses = expenses, onCategoryClick = onExpenseCategoryClick)
+                                            ExpensesList(expenses = expenses, onCategoryClick = onExpenseCategoryClick, currency = currency)
                                         }
                                     }
                                 }
@@ -652,7 +656,8 @@ fun MainScreen(
                                         incomes = incomes,
                                         expenses = expenses,
                                         totalIncomes = totalIncomes,
-                                        totalExpenses = totalExpenses
+                                        totalExpenses = totalExpenses,
+                                        currency = currency // Доданий параметр
                                     )
                                 }
                             }
@@ -689,7 +694,8 @@ fun MainScreen(
                                             onClick = { showIncomes = !showIncomes },
                                             textColor = Color(0xFF00FF00), // Яскравий зелений колір тексту
                                             fontWeight = FontWeight.Bold,  // Жирний шрифт
-                                            fontSize = 18.sp // Збільшення шрифту
+                                            fontSize = 18.sp, // Збільшення шрифту
+                                            currency = currency // Доданий параметр
                                         )
                                     }
 
@@ -699,7 +705,7 @@ fun MainScreen(
                                                 .heightIn(max = 200.dp) // Обмеження висоти списку
                                                 .verticalScroll(rememberScrollState())
                                         ) {
-                                            IncomeList(incomes = incomes, onCategoryClick = onIncomeCategoryClick)
+                                            IncomeList(incomes = incomes, onCategoryClick = onIncomeCategoryClick, currency = currency)
                                         }
                                     }
                                     Spacer(modifier = Modifier.height(16.dp))
@@ -723,7 +729,8 @@ fun MainScreen(
                                             onClick = { showExpenses = !showExpenses },
                                             textColor = Color(0xFFFF0000), // Яскравий червоний колір тексту
                                             fontWeight = FontWeight.Bold,  // Жирний шрифт
-                                            fontSize = 18.sp // Збільшення шрифту
+                                            fontSize = 18.sp, // Збільшення шрифту
+                                            currency = currency // Доданий параметр
                                         )
                                     }
 
@@ -733,7 +740,7 @@ fun MainScreen(
                                                 .heightIn(max = 200.dp) // Обмеження висоти списку
                                                 .verticalScroll(rememberScrollState())
                                         ) {
-                                            ExpensesList(expenses = expenses, onCategoryClick = onExpenseCategoryClick)
+                                            ExpensesList(expenses = expenses, onCategoryClick = onExpenseCategoryClick, currency = currency)
                                         }
                                     }
 
@@ -752,7 +759,8 @@ fun MainScreen(
                                             incomes = incomes,
                                             expenses = expenses,
                                             totalIncomes = totalIncomes,
-                                            totalExpenses = totalExpenses
+                                            totalExpenses = totalExpenses,
+                                            currency = currency // Доданий параметр
                                         )
                                     }
                                 }
@@ -768,7 +776,7 @@ fun MainScreen(
                             .zIndex(0f), // Встановлення нижчого zIndex для залишку
                         contentAlignment = Alignment.BottomStart
                     ) {
-                        BalanceDisplay(balance = balance)
+                        BalanceDisplay(balance = balance, currency = currency) // Доданий параметр
                     }
 
                     Box(
