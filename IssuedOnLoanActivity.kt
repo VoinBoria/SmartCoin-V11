@@ -63,6 +63,10 @@ class IssuedOnLoanActivity : ComponentActivity() {
         val intent = Intent(this, activityClass)
         startActivity(intent)
     }
+    private fun getSelectedCurrency(context: Context): String {
+        val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("currency", "UAH") ?: "UAH"
+    }
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -82,6 +86,8 @@ class IssuedOnLoanActivity : ComponentActivity() {
                         showOverdueMessage = false
                     }
                 }
+
+                val selectedCurrency = getSelectedCurrency(this)
 
                 ModalNavigationDrawer(
                     drawerState = drawerState,
@@ -126,7 +132,7 @@ class IssuedOnLoanActivity : ComponentActivity() {
                                     )
                                     .padding(innerPadding)
                             ) {
-                                IssuedOnLoanScreen(viewModel = loanViewModel)
+                                IssuedOnLoanScreen(viewModel = loanViewModel, selectedCurrency = selectedCurrency)
 
                                 // Анімоване повідомлення про прострочені позичання
                                 AnimatedVisibility(
@@ -164,6 +170,7 @@ class IssuedOnLoanActivity : ComponentActivity() {
 @Composable
 fun IssuedOnLoanScreen(
     viewModel: LoanViewModel,
+    selectedCurrency: String,
     modifier: Modifier = Modifier
 ) {
     var showAddLoanDialog by remember { mutableStateOf(false) }
@@ -190,7 +197,7 @@ fun IssuedOnLoanScreen(
                         .weight(1f)
                 ) {
                     items(transactions) { loanTransaction ->
-                        LoanTransactionRow(loanTransaction, viewModel, onEdit = { transactionToEdit = it })
+                        LoanTransactionRow(loanTransaction, viewModel, selectedCurrency, onEdit = { transactionToEdit = it })
                     }
                 }
 
@@ -207,7 +214,7 @@ fun IssuedOnLoanScreen(
                         modifier = Modifier.padding(bottom = padding)
                     )
                     Text(
-                        text = "${totalLoaned.formatLoanAmount(2)} ${stringResource(id = R.string.currency)}",
+                        text = "${totalLoaned.formatLoanAmount(2)} $selectedCurrency",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         color = Color.White
                     )
@@ -248,7 +255,7 @@ fun IssuedOnLoanScreen(
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun LoanTransactionRow(loanTransaction: LoanTransaction, viewModel: LoanViewModel, onEdit: (LoanTransaction) -> Unit) {
+fun LoanTransactionRow(loanTransaction: LoanTransaction, viewModel: LoanViewModel, selectedCurrency: String, onEdit: (LoanTransaction) -> Unit) {
     BoxWithConstraints {
         val screenWidth = maxWidth
         val fontSize = if (screenWidth < 360.dp) 14.sp else 18.sp
@@ -274,7 +281,7 @@ fun LoanTransactionRow(loanTransaction: LoanTransaction, viewModel: LoanViewMode
         ) {
             Column {
                 Text(
-                    text = "${stringResource(id = R.string.amount)}: ${loanTransaction.amount.formatLoanAmount(2)} ${stringResource(id = R.string.currency)}",
+                    text = "${stringResource(id = R.string.amount)}: ${loanTransaction.amount.formatLoanAmount(2)} $selectedCurrency",
                     style = TextStyle(fontSize = fontSize, fontWeight = FontWeight.Bold, color = Color.Red),
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
