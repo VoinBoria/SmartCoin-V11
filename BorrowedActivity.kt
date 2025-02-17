@@ -57,25 +57,49 @@ import java.util.*
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 
-class IssuedOnLoanActivity : ComponentActivity() {
-    private val loanViewModel: LoanViewModel by viewModels { LoanViewModelFactory(application) }
+class BorrowedActivity : ComponentActivity() {
+    private val borrowedViewModel: BorrowedViewModel by viewModels { BorrowedViewModelFactory(application) }
+
     private fun <T> navigateToActivity(activityClass: Class<T>) {
         val intent = Intent(this, activityClass)
         startActivity(intent)
     }
 
+    private fun updateLocale(context: Context, language: String) {
+        val locale = Locale(language)
+        Locale.setDefault(locale)
+        val config = context.resources.configuration
+        config.setLocale(locale)
+        context.resources.updateConfiguration(config, context.resources.displayMetrics)
+    }
+
+    private fun getSelectedLanguage(context: Context): String {
+        val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("language", "UK") ?: "UK"
+    }
+
+    private fun getSelectedCurrency(context: Context): String {
+        val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        return sharedPreferences.getString("currency", "UAH") ?: "UAH"
+    }
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val selectedLanguage = getSelectedLanguage(this)
+        updateLocale(this, selectedLanguage)
+
         setContent {
             HomeAccountingAppTheme {
                 val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
                 val scope = rememberCoroutineScope()
                 var showOverdueMessage by remember { mutableStateOf(false) }
+                val selectedCurrency = getSelectedCurrency(LocalContext.current)
 
                 LaunchedEffect(Unit) {
-                    loanViewModel.loadTransactions(application)
-                    if (loanViewModel.hasOverdueTransactions()) {
+                    borrowedViewModel.loadTransactions(application)
+                    if (borrowedViewModel.hasOverdueTransactions()) {
                         delay(500)
                         showOverdueMessage = true
                         delay(3000)
@@ -88,7 +112,7 @@ class IssuedOnLoanActivity : ComponentActivity() {
                     drawerContent = {
                         DrawerContent(
                             onNavigateToMainActivity = {
-                                val intent = Intent(this@IssuedOnLoanActivity, MainActivity::class.java).apply {
+                                val intent = Intent(this@BorrowedActivity, MainActivity::class.java).apply {
                                     putExtra("SHOW_SPLASH_SCREEN", false)
                                 }
                                 startActivity(intent)
@@ -107,7 +131,7 @@ class IssuedOnLoanActivity : ComponentActivity() {
                     Scaffold(
                         topBar = {
                             TopAppBar(
-                                title = { Text(stringResource(id = R.string.issued_on_loan), color = Color.White) },
+                                title = { Text(stringResource(id = R.string.borrowed), color = Color.White) },
                                 navigationIcon = {
                                     IconButton(onClick = { scope.launch { drawerState.open() } }) {
                                         Icon(Icons.Default.Menu, contentDescription = stringResource(id = R.string.menu), tint = Color.White)
@@ -126,29 +150,28 @@ class IssuedOnLoanActivity : ComponentActivity() {
                                     )
                                     .padding(innerPadding)
                             ) {
-                                IssuedOnLoanScreen(viewModel = loanViewModel)
+                                BorrowedScreen(viewModel = borrowedViewModel, selectedCurrency = selectedCurrency)
 
-                                // Анімоване повідомлення про прострочені позичання
                                 AnimatedVisibility(
                                     visible = showOverdueMessage,
                                     enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
                                     exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
                                     modifier = Modifier
                                         .align(Alignment.BottomCenter)
-                                        .padding(bottom = 100.dp) // збільшено значення відступу
+                                        .padding(bottom = 100.dp)
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .fillMaxWidth(0.9f) // встановлено ширину на 90% від ширини екрану
+                                            .fillMaxWidth(0.9f)
                                             .background(
                                                 brush = Brush.verticalGradient(
-                                                    colors = listOf(Color.Red.copy(alpha = 0.8f), Color.Transparent)
+                                                    colors = listOf(Color(0xFF800080).copy(alpha = 0.8f), Color.Transparent)
                                                 ),
-                                                shape = RoundedCornerShape(16.dp) // додано зглажені кути
+                                                shape = RoundedCornerShape(16.dp)
                                             )
                                             .padding(16.dp)
                                     ) {
-                                        Text(stringResource(id = R.string.overdue_loan_message), color = Color.White)
+                                        Text(stringResource(id = R.string.overdue_borrowed_message), color = Color.White)
                                     }
                                 }
                             }
@@ -162,16 +185,16 @@ class IssuedOnLoanActivity : ComponentActivity() {
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun IssuedOnLoanScreen(
-    viewModel: LoanViewModel,
-    modifier: Modifier = Modifier
+fun BorrowedScreen(
+    viewModel: BorrowedViewModel,
+    modifier: Modifier = Modifier,
+    selectedCurrency: String
 ) {
-    var showAddLoanDialog by remember { mutableStateOf(false) }
-    var transactionToEdit by remember { mutableStateOf<LoanTransaction?>(null) }
+    var showAddBorrowedDialog by remember { mutableStateOf(false) }
+    var transactionToEdit by remember { mutableStateOf<BorrowedTransaction?>(null) }
     val transactions by viewModel.transactions.collectAsState()
 
-    // Обчислюємо загальну суму позичань
-    val totalLoaned = transactions.sumOf { it.amount }
+    val totalBorrowed = transactions.sumOf { it.amount }
 
     BoxWithConstraints {
         val screenWidth = maxWidth
@@ -189,25 +212,24 @@ fun IssuedOnLoanScreen(
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
-                    items(transactions) { loanTransaction ->
-                        LoanTransactionRow(loanTransaction, viewModel, onEdit = { transactionToEdit = it })
+                    items(transactions) { borrowedTransaction ->
+                        BorrowedTransactionRow(borrowedTransaction, viewModel, onEdit = { transactionToEdit = it }, selectedCurrency = selectedCurrency)
                     }
                 }
 
-                // Додаємо підсумок знизу екрана
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(top = padding)
                 ) {
                     Text(
-                        text = stringResource(id = R.string.total_issued_on_loan),
+                        text = stringResource(id = R.string.total_borrowed),
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.White,
                         modifier = Modifier.padding(bottom = padding)
                     )
                     Text(
-                        text = "${totalLoaned.formatLoanAmount(2)} ${stringResource(id = R.string.currency)}",
+                        text = "${totalBorrowed.formatBorrowedAmount(2)} $selectedCurrency",
                         style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                         color = Color.White
                     )
@@ -215,29 +237,29 @@ fun IssuedOnLoanScreen(
             }
 
             FloatingActionButton(
-                onClick = { showAddLoanDialog = true },
+                onClick = { showAddBorrowedDialog = true },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(padding),
-                containerColor = Color(0xFFDC143C)
+                containerColor = Color(0xFFFFA500)
             ) {
                 Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.add_transaction), tint = Color.White)
             }
 
-            if (showAddLoanDialog || transactionToEdit != null) {
-                AddOrEditLoanTransactionDialog(
+            if (showAddBorrowedDialog || transactionToEdit != null) {
+                AddOrEditBorrowedTransactionDialog(
                     onDismiss = {
-                        showAddLoanDialog = false
+                        showAddBorrowedDialog = false
                         transactionToEdit = null
                     },
                     onSave = { newTransaction ->
                         if (transactionToEdit != null) {
-                            viewModel.updateLoanTransaction(newTransaction)
+                            viewModel.updateBorrowedTransaction(newTransaction)
                         } else {
-                            viewModel.addLoanTransaction(newTransaction)
+                            viewModel.addBorrowedTransaction(newTransaction)
                         }
                         transactionToEdit = null
-                        showAddLoanDialog = false
+                        showAddBorrowedDialog = false
                     },
                     transactionToEdit = transactionToEdit
                 )
@@ -245,10 +267,19 @@ fun IssuedOnLoanScreen(
         }
     }
 }
+// Перейменована функція для форматування суми
+fun Double.formatBorrowedAmount(digits: Int): String {
+    return "%.${digits}f".format(this)
+}
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
-fun LoanTransactionRow(loanTransaction: LoanTransaction, viewModel: LoanViewModel, onEdit: (LoanTransaction) -> Unit) {
+fun BorrowedTransactionRow(
+    borrowedTransaction: BorrowedTransaction,
+    viewModel: BorrowedViewModel,
+    onEdit: (BorrowedTransaction) -> Unit,
+    selectedCurrency: String
+) {
     BoxWithConstraints {
         val screenWidth = maxWidth
         val fontSize = if (screenWidth < 360.dp) 14.sp else 18.sp
@@ -274,62 +305,59 @@ fun LoanTransactionRow(loanTransaction: LoanTransaction, viewModel: LoanViewMode
         ) {
             Column {
                 Text(
-                    text = "${stringResource(id = R.string.amount)}: ${loanTransaction.amount.formatLoanAmount(2)} ${stringResource(id = R.string.currency)}",
-                    style = TextStyle(fontSize = fontSize, fontWeight = FontWeight.Bold, color = Color.Red),
+                    text = "${stringResource(id = R.string.amount)}: ${borrowedTransaction.amount.formatBorrowedAmount(2)} $selectedCurrency",
+                    style = TextStyle(fontSize = fontSize, fontWeight = FontWeight.Bold, color = Color.Yellow),
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
                 Text(
-                    text = "${stringResource(id = R.string.borrower_name)}: ${loanTransaction.borrowerName}",
-                    style = TextStyle(fontSize = fontSize, fontWeight = FontWeight.SemiBold, color = Color.Red),
+                    text = "${stringResource(id = R.string.borrower_name)}: ${borrowedTransaction.borrowerName}",
+                    style = TextStyle(fontSize = fontSize, fontWeight = FontWeight.SemiBold, color = Color.Yellow),
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
                 Text(
-                    text = "${stringResource(id = R.string.issue_date)}: ${loanTransaction.issueDate}",
+                    text = "${stringResource(id = R.string.issue_date)}: ${borrowedTransaction.issueDate}",
                     style = TextStyle(fontSize = fontSize, fontWeight = FontWeight.Normal, color = Color.LightGray),
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
                 Text(
-                    text = "${stringResource(id = R.string.due_date)}: ${loanTransaction.dueDate}",
+                    text = "${stringResource(id = R.string.due_date)}: ${borrowedTransaction.dueDate}",
                     style = TextStyle(fontSize = fontSize, fontWeight = FontWeight.Normal, color = Color.LightGray),
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
                 Text(
-                    text = "${stringResource(id = R.string.comment)}: ${loanTransaction.comment}",
+                    text = "${stringResource(id = R.string.comment)}: ${borrowedTransaction.comment}",
                     style = TextStyle(fontSize = fontSize, fontWeight = FontWeight.Normal, color = Color.LightGray),
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
             }
             Row(modifier = Modifier.align(Alignment.TopEnd)) {
-                IconButton(onClick = { onEdit(loanTransaction) }) {
+                IconButton(onClick = { onEdit(borrowedTransaction) }) {
                     Icon(imageVector = Icons.Default.Edit, contentDescription = stringResource(id = R.string.edit), tint = Color.White)
                 }
-                IconButton(onClick = { viewModel.removeLoanTransaction(loanTransaction) }) {
+                IconButton(onClick = { viewModel.removeBorrowedTransaction(borrowedTransaction) }) {
                     Icon(imageVector = Icons.Default.Delete, contentDescription = stringResource(id = R.string.delete), tint = Color.White)
                 }
             }
         }
     }
 }
-fun Double.formatLoanAmount(digits: Int): String {
-    return "%.${digits}f".format(this)
-}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddOrEditLoanTransactionDialog(
+fun AddOrEditBorrowedTransactionDialog(
     onDismiss: () -> Unit,
-    onSave: (LoanTransaction) -> Unit,
-    transactionToEdit: LoanTransaction? = null
+    onSave: (BorrowedTransaction) -> Unit,
+    transactionToEdit: BorrowedTransaction? = null
 ) {
     var amount by remember { mutableStateOf(transactionToEdit?.amount?.toString() ?: "") }
     var borrowerName by remember { mutableStateOf(transactionToEdit?.borrowerName ?: "") }
-    var issueDate by remember { mutableStateOf(transactionToEdit?.issueDate ?: getCurrentDateForLoan()) }
-    var dueDate by remember { mutableStateOf(transactionToEdit?.dueDate ?: getCurrentDateForLoan()) }
+    var issueDate by remember { mutableStateOf(transactionToEdit?.issueDate ?: getCurrentDateForBorrowed()) }
+    var dueDate by remember { mutableStateOf(transactionToEdit?.dueDate ?: getCurrentDateForBorrowed()) }
     var comment by remember { mutableStateOf(transactionToEdit?.comment ?: "") }
     var showIssueDatePicker by remember { mutableStateOf(false) }
     var showDueDatePicker by remember { mutableStateOf(false) }
 
     if (showIssueDatePicker) {
-        LoanDatePickerDialog(
+        BorrowedDatePickerDialog(
             onDateSelected = { selectedDate ->
                 issueDate = selectedDate
                 showIssueDatePicker = false
@@ -338,7 +366,7 @@ fun AddOrEditLoanTransactionDialog(
     }
 
     if (showDueDatePicker) {
-        LoanDatePickerDialog(
+        BorrowedDatePickerDialog(
             onDateSelected = { selectedDate ->
                 dueDate = selectedDate
                 showDueDatePicker = false
@@ -433,20 +461,11 @@ fun AddOrEditLoanTransactionDialog(
                 onClick = {
                     val amountValue = amount.toDoubleOrNull()
                     if (amountValue != null) {
-                        onSave(
-                            LoanTransaction(
-                                amount = amountValue,
-                                borrowerName = borrowerName,
-                                issueDate = issueDate,
-                                dueDate = dueDate,
-                                comment = comment,
-                                id = transactionToEdit?.id ?: UUID.randomUUID()
-                            )
-                        )
+                        onSave(BorrowedTransaction(amountValue, borrowerName, issueDate, dueDate, comment, transactionToEdit?.id ?: UUID.randomUUID()))
                         onDismiss()
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC143C)),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFA500)),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                 shape = RoundedCornerShape(8.dp)
             ) {
@@ -461,9 +480,8 @@ fun AddOrEditLoanTransactionDialog(
         containerColor = Color.DarkGray
     )
 }
-
 @Composable
-fun LoanDatePickerDialog(onDateSelected: (String) -> Unit) {
+fun BorrowedDatePickerDialog(onDateSelected: (String) -> Unit) {
     val context = LocalContext.current
     val calendar = Calendar.getInstance()
     val year = calendar.get(Calendar.YEAR)
@@ -472,7 +490,7 @@ fun LoanDatePickerDialog(onDateSelected: (String) -> Unit) {
     val datePickerDialog = DatePickerDialog(
         context,
         { _, selectedYear, selectedMonth, selectedDay ->
-            val formattedDate = "${selectedYear}-${selectedMonth + 1}-${selectedDay}"
+            val formattedDate = String.format("%d-%02d-%02d", selectedYear, selectedMonth + 1, selectedDay)
             onDateSelected(formattedDate)
         },
         year, month, day
@@ -482,50 +500,50 @@ fun LoanDatePickerDialog(onDateSelected: (String) -> Unit) {
     }
 }
 
-fun getCurrentDateForLoan(): String {
+fun getCurrentDateForBorrowed(): String {
     val formatter = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
     return formatter.format(java.util.Date())
 }
 
-class LoanViewModel(application: Application) : AndroidViewModel(application) {
-    private val _transactions = MutableStateFlow<List<LoanTransaction>>(emptyList())
-    val transactions: StateFlow<List<LoanTransaction>> = _transactions
+class BorrowedViewModel(application: Application) : AndroidViewModel(application) {
+    private val _transactions = MutableStateFlow<List<BorrowedTransaction>>(emptyList())
+    val transactions: StateFlow<List<BorrowedTransaction>> = _transactions
 
     init {
         loadTransactions(application)
     }
 
-    fun loadTransactions(context: Context) { // Зміна видимості на публічну
-        val sharedPreferences = context.getSharedPreferences("LoanPrefs", Context.MODE_PRIVATE)
+    fun loadTransactions(context: Context) {
+        val sharedPreferences = context.getSharedPreferences("BorrowedPrefs", Context.MODE_PRIVATE)
         val gson = Gson()
-        val transactionsJson = sharedPreferences.getString("LoanTransactions", "[]")
-        val type = object : TypeToken<List<LoanTransaction>>() {}.type
-        val loadedTransactions: List<LoanTransaction> = gson.fromJson(transactionsJson, type)
+        val transactionsJson = sharedPreferences.getString("BorrowedTransactions", "[]")
+        val type = object : TypeToken<List<BorrowedTransaction>>() {}.type
+        val loadedTransactions: List<BorrowedTransaction> = gson.fromJson(transactionsJson, type)
         _transactions.update { loadedTransactions }
     }
 
     private fun saveTransactions(context: Context) {
-        val sharedPreferences = context.getSharedPreferences("LoanPrefs", Context.MODE_PRIVATE)
+        val sharedPreferences = context.getSharedPreferences("BorrowedPrefs", Context.MODE_PRIVATE)
         val gson = Gson()
         val transactionsJson = gson.toJson(_transactions.value)
-        sharedPreferences.edit().putString("LoanTransactions", transactionsJson).apply()
+        sharedPreferences.edit().putString("BorrowedTransactions", transactionsJson).apply()
     }
 
-    fun addLoanTransaction(transaction: LoanTransaction) {
+    fun addBorrowedTransaction(transaction: BorrowedTransaction) {
         _transactions.update { currentList ->
             currentList + transaction
         }
         saveTransactions(getApplication())
     }
 
-    fun updateLoanTransaction(transaction: LoanTransaction) {
+    fun updateBorrowedTransaction(transaction: BorrowedTransaction) {
         _transactions.update { currentList ->
             currentList.map { if (it.id == transaction.id) transaction else it }
         }
         saveTransactions(getApplication())
     }
 
-    fun removeLoanTransaction(transaction: LoanTransaction) {
+    fun removeBorrowedTransaction(transaction: BorrowedTransaction) {
         _transactions.update { currentList ->
             currentList - transaction
         }
@@ -534,26 +552,27 @@ class LoanViewModel(application: Application) : AndroidViewModel(application) {
 
     fun hasOverdueTransactions(): Boolean {
         val currentDate = Date()
-        return _transactions.value.any { it.dueDate.toLoanDate().before(currentDate) }
+        return _transactions.value.any { it.dueDate.toDate().before(currentDate) }
     }
 }
 
-fun String.toLoanDate(): Date {
+fun String.toDate(): Date {
     val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     return formatter.parse(this) ?: Date()
 }
-class LoanViewModelFactory(
+
+class BorrowedViewModelFactory(
     private val application: Application
 ) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(LoanViewModel::class.java)) {
-            return LoanViewModel(application) as T
+        if (modelClass.isAssignableFrom(BorrowedViewModel::class.java)) {
+            return BorrowedViewModel(application) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
 
-data class LoanTransaction(
+data class BorrowedTransaction(
     val amount: Double,
     val borrowerName: String,
     val issueDate: String,
