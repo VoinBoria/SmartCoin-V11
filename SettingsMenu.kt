@@ -23,8 +23,9 @@ import androidx.compose.ui.zIndex
 fun SettingsMenu(
     onDismiss: () -> Unit,
     onCurrencySelected: (String) -> Unit,
-    onLanguageSelected: (String) -> Unit, // Доданий параметр
-    updateLocale: (Context, String) -> Unit // Доданий параметр
+    onLanguageSelected: (String) -> Unit,
+    updateLocale: (Context, String) -> Unit,
+    onSaveSettings: () -> Unit
 ) {
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
@@ -72,23 +73,17 @@ fun SettingsMenu(
                     .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                LanguageOption("UK", selectedLanguage) {
-                    selectedLanguage = it
-                    onLanguageSelected(it)
-                    updateLocale(context, it) // Оновити локаль одразу
-                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency)
+                LanguageOption("UK", selectedLanguage) { language ->
+                    selectedLanguage = language
+                    onLanguageSelected(language)
                 }
-                LanguageOption("EN", selectedLanguage) {
-                    selectedLanguage = it
-                    onLanguageSelected(it)
-                    updateLocale(context, it) // Оновити локаль одразу
-                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency)
+                LanguageOption("EN", selectedLanguage) { language ->
+                    selectedLanguage = language
+                    onLanguageSelected(language)
                 }
-                LanguageOption("RU", selectedLanguage) {
-                    selectedLanguage = it
-                    onLanguageSelected(it)
-                    updateLocale(context, it) // Оновити локаль одразу
-                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency)
+                LanguageOption("RU", selectedLanguage) { language ->
+                    selectedLanguage = language
+                    onLanguageSelected(language)
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -101,20 +96,17 @@ fun SettingsMenu(
                     .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                CurrencyOption("UAH", selectedCurrency) {
-                    selectedCurrency = it
-                    onCurrencySelected(it)
-                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency)
+                CurrencyOption("UAH", selectedCurrency) { currency ->
+                    selectedCurrency = currency
+                    onCurrencySelected(currency)
                 }
-                CurrencyOption("USD", selectedCurrency) {
-                    selectedCurrency = it
-                    onCurrencySelected(it)
-                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency)
+                CurrencyOption("USD", selectedCurrency) { currency ->
+                    selectedCurrency = currency
+                    onCurrencySelected(currency)
                 }
-                CurrencyOption("EUR", selectedCurrency) {
-                    selectedCurrency = it
-                    onCurrencySelected(it)
-                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency)
+                CurrencyOption("EUR", selectedCurrency) { currency ->
+                    selectedCurrency = currency
+                    onCurrencySelected(currency)
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -126,8 +118,7 @@ fun SettingsMenu(
                     Text("Закрити", color = Color.Red)
                 }
                 TextButton(onClick = {
-                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency)
-                    onCurrencySelected(selectedCurrency)
+                    onSaveSettings()
                     onDismiss()
                 }) {
                     Text("Зберегти", color = Color.Green)
@@ -136,6 +127,7 @@ fun SettingsMenu(
         }
     }
 }
+
 @Composable
 fun LanguageOption(language: String, selectedLanguage: String, onSelect: (String) -> Unit) {
     Button(
