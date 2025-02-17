@@ -50,7 +50,8 @@ fun IncomeExpenseChart(
     incomes: Map<String, Double>,
     expenses: Map<String, Double>,
     totalIncomes: Double,
-    totalExpenses: Double
+    totalExpenses: Double,
+    currency: String // Додаємо параметр для валюти
 ) {
     val emptyIncomeChartColor = Color(0x8032CD32).copy(alpha = 0.5f) // Прозоро зелений колір для доходів
     val emptyExpenseChartColor = Color(0x80FF0000).copy(alpha = 0.5f) // Прозоро червоний колір для витрат
@@ -297,6 +298,7 @@ fun ExpandableButtonWithAmount(
     gradientColors: List<Color>,
     isExpanded: Boolean,
     onClick: () -> Unit,
+    currency: String, // Додаємо параметр для валюти
     textColor: Color = Color.White, // Додаємо параметр для кольору тексту
     fontWeight: FontWeight = FontWeight.Bold, // Додаємо параметр для жирності шрифту
     fontSize: TextUnit = 24.sp // Збільшення шрифту
@@ -336,7 +338,7 @@ fun ExpandableButtonWithAmount(
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "${"%.2f".format(amount)} грн",
+                        text = "${"%.2f".format(amount)} $currency", // Додаємо валюту
                         color = textColor,
                         fontWeight = fontWeight,
                         fontSize = fontSize
@@ -355,6 +357,7 @@ fun ExpandableButtonWithAmount(
 @Composable
 fun IncomeList(
     incomes: Map<String, Double>,
+    currency: String, // Додаємо параметр для валюти
     onCategoryClick: (String) -> Unit // Додаємо параметр для обробки переходу
 ) {
     // Сортування категорій за сумою у спадному порядку
@@ -384,7 +387,7 @@ fun IncomeList(
                         style = MaterialTheme.typography.bodyLarge.copy(color = Color.White)
                     )
                     Text(
-                        text = "${"%.2f".format(amount)} грн",
+                        text = "${"%.2f".format(amount)} $currency", // Додаємо валюту
                         style = MaterialTheme.typography.bodyLarge.copy(color = Color.White)
                     )
                 }
@@ -396,6 +399,7 @@ fun IncomeList(
 @Composable
 fun ExpensesList(
     expenses: Map<String, Double>,
+    currency: String, // Додаємо параметр для валюти
     onCategoryClick: (String) -> Unit // Додаємо параметр для обробки переходу
 ) {
     // Сортування категорій за сумою у зростаючому порядку
@@ -425,7 +429,7 @@ fun ExpensesList(
                         style = MaterialTheme.typography.bodyLarge.copy(color = Color.White)
                     )
                     Text(
-                        text = "${"%.2f".format(amount)} грн",
+                        text = "${"%.2f".format(amount)} $currency", // Додаємо валюту
                         style = MaterialTheme.typography.bodyLarge.copy(color = Color.White)
                     )
                 }
@@ -433,6 +437,7 @@ fun ExpensesList(
         }
     }
 }
+
 @Composable
 fun CategoryItem(
     text: String,
@@ -473,7 +478,7 @@ fun CategoryItem(
 }
 
 @Composable
-fun BalanceDisplay(balance: Double, modifier: Modifier = Modifier) {
+fun BalanceDisplay(balance: Double, currency: String, modifier: Modifier = Modifier) { // Додаємо параметр для валюти
     val formattedBalance = "%,.2f".format(balance).replace(",", " ")
     val balanceColor = when {
         balance < 0 -> Color.Red
@@ -501,7 +506,7 @@ fun BalanceDisplay(balance: Double, modifier: Modifier = Modifier) {
                 modifier = Modifier.padding(bottom = 4.dp) // Налаштовуємо відступ для вирівнювання
             )
             Text(
-                text = "$formattedBalance грн",
+                text = "$formattedBalance $currency", // Додаємо валюту
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontSize = 22.sp, // Збільшуємо шрифт для суми
                     color = balanceColor, // Колір тексту залежить від суми
