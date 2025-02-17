@@ -39,6 +39,7 @@ import com.google.accompanist.pager.ExperimentalPagerApi
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.TextUnit
 import kotlinx.coroutines.launch
@@ -94,7 +95,7 @@ fun IncomeExpenseChart(
                             containerColor = if (pagerState.currentPage == 0) Color.Gray else Color.Transparent
                         )
                     ) {
-                        Text("Доходи", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                        Text(stringResource(id = R.string.incomes), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                     }
                     Spacer(modifier = Modifier.width(8.dp))
                     TextButton(
@@ -103,7 +104,7 @@ fun IncomeExpenseChart(
                             containerColor = if (pagerState.currentPage == 1) Color.Gray else Color.Transparent
                         )
                     ) {
-                        Text("Витрати", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                        Text(stringResource(id = R.string.expenses), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 20.sp)
                     }
                 }
 
@@ -163,7 +164,6 @@ fun IncomeExpenseChart(
         }
     }
 }
-
 @Composable
 fun LegendColumn(
     items: List<String>,
@@ -438,6 +438,7 @@ fun ExpensesList(
     }
 }
 
+
 @Composable
 fun CategoryItem(
     text: String,
@@ -476,7 +477,6 @@ fun CategoryItem(
         }
     }
 }
-
 @Composable
 fun BalanceDisplay(balance: Double, currency: String, modifier: Modifier = Modifier) { // Додаємо параметр для валюти
     val formattedBalance = "%,.2f".format(balance).replace(",", " ")
@@ -497,7 +497,7 @@ fun BalanceDisplay(balance: Double, currency: String, modifier: Modifier = Modif
             modifier = Modifier.height(56.dp) // Встановлюємо висоту контейнера для вирівнювання з кнопками
         ) {
             Text(
-                text = "Залишок:",
+                text = stringResource(id = R.string.balance),
                 style = MaterialTheme.typography.bodyLarge.copy(
                     fontSize = 24.sp, // Збільшуємо шрифт для заголовка
                     color = Color.White,
