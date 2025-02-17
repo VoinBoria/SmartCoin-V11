@@ -23,7 +23,8 @@ import androidx.compose.ui.zIndex
 fun SettingsMenu(
     onDismiss: () -> Unit,
     onCurrencySelected: (String) -> Unit,
-    onLanguageSelected: (String) -> Unit // Доданий параметр
+    onLanguageSelected: (String) -> Unit, // Доданий параметр
+    updateLocale: (Context, String) -> Unit // Доданий параметр
 ) {
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
@@ -74,17 +75,20 @@ fun SettingsMenu(
                 LanguageOption("UK", selectedLanguage) {
                     selectedLanguage = it
                     onLanguageSelected(it)
-                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency) // Додано
+                    updateLocale(context, it) // Оновити локаль одразу
+                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency)
                 }
                 LanguageOption("EN", selectedLanguage) {
                     selectedLanguage = it
                     onLanguageSelected(it)
-                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency) // Додано
+                    updateLocale(context, it) // Оновити локаль одразу
+                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency)
                 }
                 LanguageOption("RU", selectedLanguage) {
                     selectedLanguage = it
                     onLanguageSelected(it)
-                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency) // Додано
+                    updateLocale(context, it) // Оновити локаль одразу
+                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency)
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
@@ -100,17 +104,17 @@ fun SettingsMenu(
                 CurrencyOption("UAH", selectedCurrency) {
                     selectedCurrency = it
                     onCurrencySelected(it)
-                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency) // Додано
+                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency)
                 }
                 CurrencyOption("USD", selectedCurrency) {
                     selectedCurrency = it
                     onCurrencySelected(it)
-                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency) // Додано
+                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency)
                 }
                 CurrencyOption("EUR", selectedCurrency) {
                     selectedCurrency = it
                     onCurrencySelected(it)
-                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency) // Додано
+                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency)
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
