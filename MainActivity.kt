@@ -104,9 +104,10 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun MainContent() {
         val context = LocalContext.current
-        val sharedPreferences = context.getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val sharedPreferences = getSharedPreferences("settings", Context.MODE_PRIVATE)
         var selectedCurrency by remember { mutableStateOf(getSelectedCurrency(sharedPreferences)) }
-        var selectedLanguage by remember { mutableStateOf(getSelectedLanguage(sharedPreferences)) }
+        var selectedLanguage = sharedPreferences.getString("language", "UK") ?: "UK"
+        updateLocale(this, selectedLanguage)
         var tempSelectedCurrency by remember { mutableStateOf(selectedCurrency) }
         var tempSelectedLanguage by remember { mutableStateOf(selectedLanguage) }
 
@@ -200,9 +201,10 @@ class MainActivity : ComponentActivity() {
     private fun updateLocale(context: Context, language: String) {
         val locale = Locale(language)
         Locale.setDefault(locale)
-        val config = context.resources.configuration
+        val resources = context.resources
+        val config = resources.configuration
         config.setLocale(locale)
-        context.resources.updateConfiguration(config, context.resources.displayMetrics)
+        resources.updateConfiguration(config, resources.displayMetrics)
     }
 
     private fun saveSettings(sharedPreferences: SharedPreferences, language: String, currency: String) {
