@@ -118,7 +118,9 @@ fun SettingsMenu(
                     Text("Закрити", color = Color.Red)
                 }
                 TextButton(onClick = {
+                    saveSettings(sharedPreferences, selectedLanguage, selectedCurrency) // Виклик saveSettings
                     onSaveSettings()
+                    updateLocale(context, selectedLanguage) // Виклик updateLocale
                     onDismiss()
                 }) {
                     Text("Зберегти", color = Color.Green)
